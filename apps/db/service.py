@@ -1,15 +1,13 @@
+import hashlib
 import logging
 import time
 from datetime import datetime, timedelta
-from uuid import uuid5, NAMESPACE_DNS
 
-from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import User
+from django.db import models
 from django.utils import timezone
 
-from django.db import models
-
-from apps.db.models import HeartBeat, SystemInfo, LoginLog, Token
+from apps.db.models import HeartBeat, SystemInfo, LoginLog, Token, LoginClient, TagToClient, Tag
 
 logger = logging.getLogger(__name__)
 
@@ -22,20 +20,23 @@ class BaseService:
     """
     db: models.Model = None
 
-    def get_list(self, filters=None, ordering=None, page=1, page_size=10):
+    def get_list(self, **kwargs):
         """
         通用分页查询方法
-        
+
         :param filters: 查询条件字典
         :param ordering: 排序字段列表
         :param page: 当前页码
         :param page_size: 每页记录数
         :return: 包含分页信息的字典
         """
-        filters = filters or {}
+        page = int(kwargs.pop('page', 1))
+        page_size = int(kwargs.pop('page_size', 10))
+
+        filters = kwargs.pop('filters', {})
         queryset = self.db.objects.filter(**filters)
 
-        if ordering:
+        if ordering := kwargs.pop('ordering', []):
             queryset = queryset.order_by(*ordering)
 
         total = queryset.count()
@@ -141,9 +142,17 @@ class UserService(BaseService):
         user.set_password(password)
         user.save()
 
+    def get_list(self, status, page=1, page_size=10):
+        return super().get_list(
+            filters={'is_active': status}, page=page, page_size=page_size
+        )
+
 
 class SystemInfoService(BaseService):
     db = SystemInfo
+
+    def get_client_info_by_uuid(self, uuid) -> SystemInfo:
+        return self.query(uuid=uuid).first()
 
     def update(self, uuid: str, **kwargs):
         """
@@ -159,6 +168,9 @@ class SystemInfoService(BaseService):
             },
             **kwargs
         )
+
+    def get_list(self, page=1, page_size=10):
+        return super().get_list(page=page, page_size=page_size)
 
 
 class HeartBeatService(BaseService):
@@ -192,6 +204,36 @@ class HeartBeatService(BaseService):
         # client_time = client. if client else None
 
 
+class LoginClientService(BaseService):
+    """
+    登录客户端服务类
+
+    用于处理登录客户端的相关业务逻辑
+    """
+    db = LoginClient
+
+    def update_login_status(self, username, uuid):
+        return self.update(
+            filters={
+                'username': username,
+                'uuid': uuid,
+            },
+            login_status=True,
+        )
+
+    def update_logout_status(self, username, uuid):
+        return self.update(
+            filters={
+                'username': username,
+                'uuid': uuid,
+            },
+            login_status=False,
+        )
+
+    def get_login_client_list(self, username):
+        return self.query(username=username).all()
+
+
 class LoginLogService(BaseService):
     """
     登录日志服务类
@@ -219,10 +261,17 @@ class LoginLogService(BaseService):
             kwargs['client_id'] = kwargs.pop('id')
         if 'type' in kwargs:
             kwargs['login_type'] = kwargs.pop('type')
-        if 'autoLogin' in kwargs:
-            kwargs['auto_login'] = kwargs.pop('autoLogin')
 
         return super().create(**kwargs)
+
+    def get_login_log(self, uuid, username) -> LoginLog:
+        return self.query(
+            uuid=uuid,
+            username=username,
+        ).first()
+
+    def get_list(self, page=1, page_size=10):
+        return super().get_list(page=page, page_size=page_size)
 
 
 class TokenService(BaseService):
@@ -233,8 +282,18 @@ class TokenService(BaseService):
     """
     db = Token
 
+    @staticmethod
+    def get_str_md5(s):
+        if not isinstance(s, (str,)):
+            s = str(s)
+
+        myHash = hashlib.md5()
+        myHash.update(s.encode())
+
+        return myHash.hexdigest()
+
     def create_token(self, username, uuid):
-        token = uuid5(NAMESPACE_DNS, username + uuid + str(time.time()))
+        token = self.get_str_md5(username + uuid + str(time.time()))
         self.create(
             username=username,
             uuid=uuid,
@@ -247,6 +306,7 @@ class TokenService(BaseService):
     def check_token(self, token, timeout=3600):
         if _token := self.query(token=token).first():
             return _token.last_used_at > timezone.now() - timedelta(seconds=timeout)
+        self.delete(token=token)
         return False
 
     def update_token(self, token):
@@ -256,16 +316,54 @@ class TokenService(BaseService):
             return Token
         return False
 
+    def update_token_by_uuid(self, uuid):
+        if _token := self.query(uuid=uuid).first():
+            _token.last_used_at = timezone.now()
+            _token.save()
+            return Token
+        return False
+
+    def delete_token(self, token):
+        return self.delete(token=token)
+
     def delete_token_by_uuid(self, uuid):
         return self.delete(uuid=uuid)
 
+    def get_user_info_by_token(self, token) -> User | None:
+        if username := self.query(token=token).first().username:
+            return UserService().get_user_by_name(username)
+        return None
 
-user_service = UserService()
-if not user_service.get_user_by_name('admin'):
-    user_service.create_user(
-        user_name='admin',
-        password=make_password('admin'),
-        email='',
-        is_superuser=True,
-        is_staff=True
-    )
+    def get_cur_uuid_by_token(self, token) -> str | None:
+        if uuid := self.query(token=token).first().uuid:
+            return uuid
+        return None
+
+
+class TagService:
+    """
+    标签服务类
+
+    用于处理标签相关的业务逻辑
+    """
+    db_tag = Tag
+    db_client = SystemInfo
+    db_tag2client = TagToClient
+
+    def create_tag(self, tag, description=''):
+        return self.db_tag.objects.get_or_create(tag=tag, description=description)
+
+    def delete_tag(self, tag):
+        return self.db_tag.objects.filter(tag=tag).delete()
+
+    def update_tag(self, tag, description=''):
+        return self.db_tag.objects.filter(tag=tag).update(description=description)
+
+    def get_all_tags(self):
+        return self.db_tag.objects.all()
+
+    def add_tag_to_client(self, tag, client_id):
+        return self.db_tag2client.objects.get_or_create(tag=tag, client_id=client_id)
+
+    def get_tag_client_list(self, tag):
+        return self.db_tag2client.objects.filter(tag=tag)

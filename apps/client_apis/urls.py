@@ -7,4 +7,8 @@ urlpatterns = [
     path('sysinfo', views.sysinfo),
     path('login', views.login),
     path('logout', views.logout),
+    path('ab', views.ab),
+    path('currentUser', views.current_user),
+    path('users', views.users),
+    path('peers', views.peers),
 ]

@@ -10,9 +10,9 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
-from pathlib import Path
-import os
 import logging
+import os
+from pathlib import Path
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -35,14 +35,15 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
-    'apps.client_apis.apps.ClientApisConfig',
-    'apps.db.apps.DbConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'apps.client_apis.apps.ClientApisConfig',
+    'apps.db.apps.DbConfig',
+    'apps.commands.apps.CommandsConfig',
 ]
 
 MIDDLEWARE = [
