@@ -121,7 +121,7 @@ LOGGING = {
         'file': {
             'level': 'DEBUG' if DEBUG else 'INFO',
             'class': 'logging.handlers.TimedRotatingFileHandler',
-            'filename': os.path.join(BASE_DIR, 'logs/debug.log'),
+            'filename': os.path.join(BASE_DIR, 'logs/rustdesk_api.log'),
             'encoding': 'utf8',
             'delay': True,
             'when': 'midnight',

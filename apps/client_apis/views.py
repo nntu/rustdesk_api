@@ -10,6 +10,7 @@ from django.views.decorators.http import require_http_methods
 
 from apps.client_apis.common import check_login
 from apps.common.utils import get_local_time
+from apps.db.models import SystemInfo
 from apps.db.service import HeartBeatService, SystemInfoService, TokenService, UserService, LoginLogService, \
     LoginClientService, TagService
 
@@ -75,7 +76,6 @@ def sysinfo(request: HttpRequest):
 def login(request: HttpRequest):
     """
     处理用户登录请求
-    
     :param request: HTTP请求对象
     :return: JSON响应对象
     """
@@ -106,8 +106,8 @@ def login(request: HttpRequest):
     # 创建登录日志
     login_log_service = LoginLogService()
     login_log_service.create(
-        username=username,
-        uuid=uuid,
+        username=user,
+        uuid=SystemInfoService().get_client_info_by_uuid(uuid),
         client_id=body.get('id'),
         login_type=body.get('login_type', 'access_token'),
         login_status=True,
@@ -131,25 +131,23 @@ def login(request: HttpRequest):
 def logout(request: HttpRequest):
     body = json.loads(request.body.decode('utf-8'))
     # print(body)
-    token = request.headers.get('Authorization')[7:]
     uuid = body.get('uuid')
-
     token_service = TokenService()
-    username = token_service.get_user_info_by_token(token)
+    token, user_info = token_service.get_user_token(request)
     token_service.delete_token(token)
 
     # 更新登出状态
     LoginClientService().update_logout_status(
         uuid=uuid,
-        username=username,
+        username=user_info,
         client_id=body.get('id'),
     )
 
     login_log_service = LoginLogService()
-    login_log = login_log_service.get_login_log(uuid=uuid, username=username)
+    login_log = login_log_service.get_login_log(uuid=uuid, username=user_info)
     login_log_service.create(
-        username=username,
-        uuid=uuid,
+        username=user_info,
+        uuid=SystemInfoService().get_client_info_by_uuid(uuid),
         client_id=login_log.client_id,
         login_type=login_log.login_type,
         login_status=False,
@@ -182,11 +180,12 @@ def ab(request: HttpRequest):
             }
         )
     elif request.method == 'POST':
-        user_info = TokenService().get_user_info_by_token(request.headers.get('Authorization')[7:])
+        token_service = TokenService()
+        token, user_info = token_service.get_user_token(request)
         body = json.loads(request.body.decode('utf-8'))
-        print(111, body)
+        # print(111, body)
         data = json.loads(body.get('data')) if body.get('data') else {}
-        print(111, data)
+        # print(111, data)
 
         tag_service = TagService(user_info)
         try:
@@ -209,8 +208,9 @@ def ab_personal(request: HttpRequest):
     :param request:
     :return:
     """
-    print(request.body)
-    user_info = TokenService().get_user_info_by_token(request.headers.get('Authorization')[7:])
+    # print(request.body)
+    token_service = TokenService()
+    token, user_info = token_service.get_user_token(request)
     tag_service = TagService(user_info)
     data = {}
     tags = tag_service.get_all_tags()
@@ -222,7 +222,7 @@ def ab_personal(request: HttpRequest):
         'code': 1,
         'updated_at': get_local_time().isoformat()
     }
-    print(result)
+    # print(result)
     return JsonResponse(result)
 
 
@@ -235,9 +235,7 @@ def current_user(request: HttpRequest):
     :return:
     """
     token_service = TokenService()
-    token = request.headers.get('Authorization')[7:]
-
-    user_info = token_service.get_user_info_by_token(token)
+    token, user_info = token_service.get_user_token(request)
 
     return JsonResponse(
         {
@@ -259,7 +257,8 @@ def users(request: HttpRequest):
     page = int(request.GET.get('current', 1))
     page_size = int(request.GET.get('pageSize', 10))
     status = int(request.GET.get('status', 1))
-    user_info = TokenService().get_user_info_by_token(request.headers.get('Authorization')[7:])
+    token_service = TokenService()
+    token, user_info = token_service.get_user_token(request)
     if user_info.is_superuser:
         result = UserService().get_list(status=status, page=page, page_size=page_size)['results']
     else:
@@ -294,70 +293,88 @@ def peers(request: HttpRequest):
     :param request:
     :return:
     """
+    # TODO 这里有一个问题，这里需要按照用户展示设备信息，当前只展示登录用户的信息
     page = int(request.GET.get('current', 1))
     page_size = int(request.GET.get('pageSize', 10))
 
-    token = request.headers.get('Authorization')[7:]
     token_service = TokenService()
-    user_info = token_service.get_user_info_by_token(token)
-    uuid = token_service.get_cur_uuid_by_token(token)
-
-    # if user_info.is_superuser:
-    #     client_list = SystemInfoService().get_list(page=page, page_size=page_size)['results']
-    # else:
-    client_list = LoginClientService().get_login_client_list(user_info)
-    data = [
-        {
-            "id": client.uuid.client_id,
-            "info": {
-                "device_name": client.uuid.device_name,
-                "os": client.uuid.os,
-                "username": client.uuid.username,
-            },
-            "status": 1,
-            "user_name": user_info.username,
-        } for client in client_list if client.uuid.uuid != uuid
-    ]
-
-    data = {
-        'total': len(data),
-        'data': data
-    }
-    print(data)
-    return JsonResponse(data)
-
-
-@require_http_methods(["GET"])
-@check_login
-def device_group_accessible(request):
-    page = int(request.GET.get('current', 1))
-    page_size = int(request.GET.get('pageSize', 10))
-
-    token = request.headers.get('Authorization')[7:]
-    token_service = TokenService()
-    user_info = token_service.get_user_info_by_token(token)
+    token, user_info = token_service.get_user_token(request)
     uuid = token_service.get_cur_uuid_by_token(token)
 
     if user_info.is_superuser:
         client_list = SystemInfoService().get_list(page=page, page_size=page_size)['results']
     else:
-        client_list = LoginClientService().get_login_client_list(user_info.username)
+        client_list = LoginClientService().get_login_client_list(user_info)
+    data = []
+    for client in client_list:
+        client = client if isinstance(client, SystemInfo) else client.uuid
+        if client.uuid == uuid:
+            continue
+        data.append(
+            {
+                "id": client.client_id,
+                "info": {
+                    "device_name": client.device_name,
+                    "os": client.os,
+                    "username": client.username,
+                },
+                "status": 1,
+                "user_name": user_info.username,
+            }
+        )
+    result = {
+        'total': len(client_list),
+        'data': data
+    }
+    return JsonResponse(result)
 
-    data = [
-        {
-            "id": client.client_id,
-            "info": {
-                "device_name": client.device_name,
-                "os": client.os,
-                "username": client.username,
-            },
-            "status": 1,
-            "user_name": user_info.username,
-        } for client in client_list if client.uuid != uuid
-    ]
-    return JsonResponse(
-        {
-            'total': len(client_list),
-            'data': data
-        }
-    )
+
+@require_http_methods(["GET"])
+@check_login
+def device_group_accessible(request):
+    """
+    admin获取当前服务端所有设备信息
+    :param request:
+    :return:
+    """
+    page = int(request.GET.get('current', 1))
+    page_size = int(request.GET.get('pageSize', 10))
+
+    token_service = TokenService()
+    token, user_info = token_service.get_user_token(request)
+    uuid = token_service.get_cur_uuid_by_token(token)
+
+    if user_info.is_superuser:
+        client_list = SystemInfoService().get_list(page=page, page_size=page_size)['results']
+    else:
+        # client_list = LoginClientService().get_login_client_list(user_info.username)
+        return JsonResponse(
+            {
+                'total': 0,
+                'data': []
+            }
+        )
+
+    data = []
+    for client in client_list:
+        client = client if isinstance(client, SystemInfo) else client.uuid
+        # if client.uuid == uuid:
+        #     continue
+        data.append(
+            {
+                "id": client.client_id,
+                "info": {
+                    "device_name": client.device_name,
+                    "os": client.os,
+                    "username": client.username,
+                },
+                "status": 1,
+                "user_name": user_info.username,
+            }
+        )
+    result = {
+        'total': len(client_list),
+        'data': data
+    }
+    print(result)
+    return JsonResponse(result)

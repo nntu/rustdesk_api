@@ -6,6 +6,7 @@ from datetime import timedelta
 from django.contrib.auth.models import User
 from django.db import models
 from django.db.models import QuerySet
+from django.http import HttpRequest
 
 from apps.common.utils import get_local_time
 from apps.db.models import HeartBeat, SystemInfo, LoginLog, Token, LoginClient, TagToClient, Tag, UserToTag
@@ -316,7 +317,8 @@ class TokenService(BaseService):
         return myHash.hexdigest()
 
     def create_token(self, username, uuid):
-        token = self.get_str_md5(username + uuid + str(time.time()))
+        username = username.username if isinstance(username, User) else username
+        token = f'{self.get_str_md5(uuid + str(time.time()))}_{username}'
         self.create(
             username=self.get_username(username),
             uuid=self.get_uuid(uuid),
@@ -358,14 +360,20 @@ class TokenService(BaseService):
         logger.info(f"通过uuid删除令牌: {uuid}")
         return res
 
-    def get_user_info_by_token(self, token) -> User | None:
-        if username := self.query(token=token).first().username:
-            return UserService().get_user_by_name(username)
-        return None
+    # def get_user_info_by_token(self, token) -> User | None:
+    #     if username := self.query(token=token).first().username:
+    #         return UserService().get_user_by_name(username)
+    #     return None
+
+    @staticmethod
+    def get_user_token(request: HttpRequest):
+        authorization = request.headers.get('Authorization')[7:]
+        username = authorization.split('_')[-1]
+        return authorization, UserService().get_user_by_name(username)
 
     def get_cur_uuid_by_token(self, token) -> str | None:
         if uuid := self.query(token=token).first().uuid:
-            return uuid
+            return uuid.uuid
         return None
 
 
