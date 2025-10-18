@@ -109,7 +109,7 @@ LOGGING = {
     'disable_existing_loggers': False,
     'formatters': {
         'verbose': {
-            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'format': '{asctime} {module} {process:d} {thread:d} {levelname} {message}',
             'style': '{',
         },
         'simple': {
@@ -131,7 +131,7 @@ LOGGING = {
         'console': {
             'level': 'DEBUG',
             'class': 'logging.StreamHandler',
-            'formatter': 'simple',
+            'formatter': 'verbose' if DEBUG else 'simple',
             'filters': ['require_debug_true'],
         },
     },

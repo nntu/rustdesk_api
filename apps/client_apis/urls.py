@@ -11,5 +11,7 @@ urlpatterns = [
     path('currentUser', views.current_user),
     path('users', views.users),
     path('peers', views.peers),
+    path('ab/personal', views.ab_personal),
+    path('device-group/accessible', views.device_group_accessible),
     path('time', views.time_test),
 ]

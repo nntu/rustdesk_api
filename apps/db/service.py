@@ -5,9 +5,10 @@ from datetime import timedelta
 
 from django.contrib.auth.models import User
 from django.db import models
+from django.db.models import QuerySet
 
 from apps.common.utils import get_local_time
-from apps.db.models import HeartBeat, SystemInfo, LoginLog, Token, LoginClient, TagToClient, Tag
+from apps.db.models import HeartBeat, SystemInfo, LoginLog, Token, LoginClient, TagToClient, Tag, UserToTag
 
 logger = logging.getLogger(__name__)
 
@@ -107,6 +108,18 @@ class BaseService:
             }
             self.create(**data)
 
+    @staticmethod
+    def get_username(username):
+        if isinstance(username, str):
+            username = UserService().get_user_by_name(username)
+        return username
+
+    @staticmethod
+    def get_uuid(uuid):
+        if isinstance(uuid, str):
+            uuid = SystemInfoService().get_client_info_by_uuid(uuid)
+        return uuid
+
 
 class UserService(BaseService):
     db = User
@@ -118,13 +131,16 @@ class UserService(BaseService):
             return None
 
     def create_user(self, user_name, password, email='', is_superuser=False, is_staff=False):
-        return self.create(
+        user = self.create(
             username=user_name,
-            password=password,
             email=email,
             is_superuser=is_superuser,
             is_staff=is_staff
         )
+        user.set_password(password)
+        user.save()
+        logger.info(f'创建用户: {user}')
+        return user
 
     def get_user_by_email(self, email):
         return self.query(email=email).first()
@@ -141,6 +157,7 @@ class UserService(BaseService):
             raise ValueError("Either user_name or email must be provided.")
         user.set_password(password)
         user.save()
+        logger.info(f'设置用户密码: {user}')
 
     def get_list(self, status, page=1, page_size=10):
         return super().get_list(
@@ -162,15 +179,19 @@ class SystemInfoService(BaseService):
         :param kwargs: 系统信息字段
         :return: (created, object)元组
         """
-        return super().update(
+        super().update(
             filters={
                 'uuid': uuid,
             },
             **kwargs
         )
+        kwargs['uuid'] = uuid
+        logger.info(f'更新设备信息: {kwargs}')
 
     def get_list(self, page=1, page_size=10):
-        return super().get_list(page=page, page_size=page_size)
+        res = super().get_list(page=page, page_size=page_size)
+        logger.debug(f'SystemInfo list: {res}')
+        return res
 
 
 class HeartBeatService(BaseService):
@@ -179,11 +200,23 @@ class HeartBeatService(BaseService):
     def update(self, uuid, **kwargs):
         kwargs['modified_at'] = get_local_time()
         kwargs['timestamp'] = get_local_time()
-        return super().update(filters={'uuid': uuid}, **kwargs)
+        res = super().update(filters={'uuid': uuid}, **kwargs)
+        # logger.debug(f'update heartbeat: {res}')
+        return res
 
-    def is_alive(self, uuid):
+    def is_alive(self, uuid, timeout=60):
         client = self.query(uuid=uuid).first()
-        # client_time = client. if client else None
+        if client and get_local_time() - client.modified_at < timeout:
+            return True
+        return False
+
+    def get_list(self, page=1, page_size=10, keep_alive_timeout=60):
+        device_list = super().get_list(page=page, page_size=page_size)
+        data = [
+            {
+                device.uuid: True if get_local_time() - device.modified_at < keep_alive_timeout else False
+            } for device in device_list
+        ]
 
 
 class LoginClientService(BaseService):
@@ -194,26 +227,34 @@ class LoginClientService(BaseService):
     """
     db = LoginClient
 
-    def update_login_status(self, username, uuid):
-        return self.update(
+    def update_login_status(self, username, uuid, client_id):
+        res = self.update(
             filters={
-                'username': username,
-                'uuid': uuid,
+                'username': self.get_username(username),
+                'uuid': self.get_uuid(uuid),
+                'client_id': client_id,
             },
             login_status=True,
         )
 
-    def update_logout_status(self, username, uuid):
-        return self.update(
+        logger.info(f'更新登录状态: {username} - {uuid}')
+        return res
+
+    def update_logout_status(self, username, uuid, client_id):
+        res = self.update(
             filters={
-                'username': username,
-                'uuid': uuid,
+                'username': self.get_username(username),
+                'uuid': self.get_uuid(uuid),
+                'client_id': client_id,
             },
             login_status=False,
         )
 
-    def get_login_client_list(self, username):
-        return self.query(username=username).all()
+        logger.info(f'更新登出状态: {username} - {uuid}')
+        return res
+
+    def get_login_client_list(self, username) -> QuerySet[LoginClient]:
+        return self.query(username=self.get_username(username)).all()
 
 
 class LoginLogService(BaseService):
@@ -243,13 +284,13 @@ class LoginLogService(BaseService):
             kwargs['client_id'] = kwargs.pop('id')
         if 'type' in kwargs:
             kwargs['login_type'] = kwargs.pop('type')
-
+        logger.info(f"创建登录日志: {kwargs}")
         return super().create(**kwargs)
 
     def get_login_log(self, uuid, username) -> LoginLog:
         return self.query(
-            uuid=uuid,
-            username=username,
+            uuid=self.get_uuid(uuid),
+            username=self.get_username(username),
         ).first()
 
     def get_list(self, page=1, page_size=10):
@@ -277,12 +318,13 @@ class TokenService(BaseService):
     def create_token(self, username, uuid):
         token = self.get_str_md5(username + uuid + str(time.time()))
         self.create(
-            username=username,
-            uuid=uuid,
+            username=self.get_username(username),
+            uuid=self.get_uuid(uuid),
             token=token,
             created_at=get_local_time(),
             last_used_at=get_local_time(),
         )
+        logger.info(f"创建令牌: user: {username} uuid: {uuid} token: {token}")
         return token
 
     def check_token(self, token, timeout=3600):
@@ -299,17 +341,22 @@ class TokenService(BaseService):
         return False
 
     def update_token_by_uuid(self, uuid):
-        if _token := self.query(uuid=uuid).first():
+        if _token := self.query(uuid=self.get_uuid(uuid)).first():
             _token.last_used_at = get_local_time()
             _token.save()
+            logger.info(f"通过uuid更新令牌: {uuid} - {_token.token}")
             return Token
         return False
 
     def delete_token(self, token):
-        return self.delete(token=token)
+        res = self.delete(token=token)
+        logger.info(f"删除令牌: {token}")
+        return res
 
     def delete_token_by_uuid(self, uuid):
-        return self.delete(uuid=uuid)
+        res = self.delete(uuid=self.get_uuid(uuid))
+        logger.info(f"通过uuid删除令牌: {uuid}")
+        return res
 
     def get_user_info_by_token(self, token) -> User | None:
         if username := self.query(token=token).first().username:
@@ -331,18 +378,35 @@ class TagService:
     db_tag = Tag
     db_client = SystemInfo
     db_tag2client = TagToClient
+    db_user2tag = UserToTag
 
-    def create_tag(self, tag, description=''):
-        return self.db_tag.objects.get_or_create(tag=tag, description=description)
+    def __init__(self, username):
+        self.username = username
+
+    def create_tag(self, tag, color):
+        _tag, created = self.db_tag.objects.get_or_create(tag=tag, defaults={'color': color})
+        if created:
+            self.db_user2tag.objects.create(tag_id_id=_tag.id, username=self.username)
 
     def delete_tag(self, tag):
-        return self.db_tag.objects.filter(tag=tag).delete()
+        self.db_tag.objects.filter(tag=tag)
 
-    def update_tag(self, tag, description=''):
-        return self.db_tag.objects.filter(tag=tag).update(description=description)
+    def update_tag(self, tag, color=None, new_tag=None):
+        data = {}
+        if color:
+            data['color'] = color
+        if new_tag:
+            data['tag'] = new_tag
+        return self.db_tag.objects.filter(tag=tag).update(**data)
 
     def get_all_tags(self):
-        return self.db_tag.objects.all()
+        """
+        获取当前用户关联的所有标签
+        
+        :return: QuerySet of Tag objects associated with the current user
+        """
+        user_tags = self.db_user2tag.objects.filter(username=self.username).select_related('tag_id')
+        return [ut.tag_id for ut in user_tags]
 
     def add_tag_to_client(self, tag, client_id):
         return self.db_tag2client.objects.get_or_create(tag=tag, client_id=client_id)
