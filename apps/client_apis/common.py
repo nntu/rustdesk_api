@@ -3,7 +3,7 @@ import logging
 
 from django.http import HttpRequest, JsonResponse
 
-from apps.common.utils import get_uuid
+from apps.common.utils import get_randem_md5
 from apps.db.service import TokenService, LoginClientService, SystemInfoService
 
 logger = logging.getLogger('request_debug_log')
@@ -48,9 +48,8 @@ def request_debug_log(func):
     :param func: 被装饰的函数
     :return: 装饰后的函数
     """
-    __uuid = get_uuid()
-
     def wrapper(request: HttpRequest, *args, **kwargs):
+        __uuid = get_randem_md5()
         request_log = {
             'method': request.method,
             'path': request.path,
@@ -61,7 +60,7 @@ def request_debug_log(func):
         elif post := request.POST:
             request_log['request_post_body'] = post.dict()
 
-        logger.debug(f'request[{__uuid}]: {json.dumps(request_log)}')
+        logger.debug(f'[{__uuid}]request: {json.dumps(request_log)}')
         response = func(request, *args, **kwargs)
         response_log = json.dumps(
             {
@@ -69,7 +68,7 @@ def request_debug_log(func):
                 'response_body': json.loads(response.content),
             }
         )
-        logger.debug(f'response[{__uuid}]: {response_log}')
+        logger.debug(f'[{__uuid}]response: {response_log}')
         return response
 
     return wrapper

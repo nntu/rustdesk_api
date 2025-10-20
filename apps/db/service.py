@@ -7,7 +7,7 @@ from django.db import models
 from django.db.models import QuerySet
 from django.http import HttpRequest
 
-from apps.common.utils import get_local_time, get_uuid
+from apps.common.utils import get_local_time, get_randem_md5
 from apps.db.models import HeartBeat, SystemInfo, Token, LoginClient, TagToClient, Tag, UserToTag, Log
 
 logger = logging.getLogger(__name__)
@@ -261,7 +261,7 @@ class TokenService(BaseService):
 
     def create_token(self, username, uuid):
         username = username.username if isinstance(username, User) else username
-        token = f'{get_uuid()}_{username}'
+        token = f'{get_randem_md5()}_{username}'
         self.create(
             username=self.get_username(username),
             uuid=self.get_uuid(uuid),

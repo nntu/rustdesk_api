@@ -1,4 +1,7 @@
-from uuid import uuid1
+import random
+import time
+from hashlib import md5
+from uuid import uuid1, uuid4
 
 from django.utils import timezone
 
@@ -21,3 +24,20 @@ def get_uuid():
     :return: UUID
     """
     return str(uuid1().hex)
+
+
+def get_md5(data: str):
+    """
+    获取一个md5
+    :param data:
+    :return:
+    """
+    return md5(data.encode('utf-8')).hexdigest()
+
+
+def get_randem_md5():
+    """
+    获取一个随机的MD5
+    :return:
+    """
+    return str(get_md5(f'{uuid4()}_{time.ctime()}_{random.randint(0, 99999999)}'))
