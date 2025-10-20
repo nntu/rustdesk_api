@@ -13,5 +13,7 @@ urlpatterns = [
     path('peers', views.peers),
     path('ab/personal', views.ab_personal),
     path('device-group/accessible', views.device_group_accessible),
+    path('audit/conn', views.audit_conn),
+    path('audit/file', views.audit_file),
     path('time', views.time_test),
 ]

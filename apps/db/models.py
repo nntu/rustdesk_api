@@ -119,23 +119,78 @@ class LoginClient(models.Model):
         db_table = 'login_client'
 
 
-class LoginLog(models.Model):
-    username = models.ForeignKey(User, to_field='username', on_delete=models.CASCADE, verbose_name='用户名')
-    # username = models.ForeignKey(User, to_field='username', on_delete=models.CASCADE, verbose_name='用户名')
-    client_id = models.CharField(max_length=255, verbose_name='客户端ID')
+class Log(models.Model):
+    """
+    日志模型
+    """
+    username = models.ForeignKey(User, to_field='username', on_delete=models.CASCADE, verbose_name='用户名', null=True,
+                                 default='')
     uuid = models.ForeignKey(SystemInfo, to_field='uuid', on_delete=models.CASCADE, verbose_name='设备UUID')
-    login_type = models.CharField(max_length=50, verbose_name='登录类型')
-    login_status = models.BooleanField(default=True, verbose_name='登录状态')
-    os = models.CharField(max_length=50, verbose_name='操作系统')
-    device_type = models.CharField(max_length=50, verbose_name='设备类型')
-    device_name = models.CharField(max_length=255, verbose_name='设备名称')
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='登录时间')
+    log_level = models.CharField(max_length=50, verbose_name='日志类型',
+                                 choices=[('info', '信息'), ('warning', '警告'), ('error', '错误')])
+    operation_type = models.CharField(max_length=50, verbose_name='操作类型',
+                                      choices=[('add', '添加'), ('delete', '删除'), ('update', '更新'),
+                                               ('query', '查询'), ('other', '其他')])
+    operation_object = models.CharField(max_length=50, verbose_name='操作对象',
+                                        choices=[('tag', '标签'), ('client', '设备'), ('user', '用户'),
+                                                 ('token', '令牌'), ('login_client', '登录客户端'),
+                                                 ('login_log', '登录日志'), ('log', '日志'),
+                                                 ('tag_to_client', '标签与设备关系'), ('user_to_tag', '用户与标签关系'),
+                                                 ('system_info', '系统信息'), ('heart_beat', '心跳包'),
+                                                 ('config', '配置'), ('file', '文件'),
+                                                 ('file_to_client', '文件与设备关系'),
+                                                 ('file_to_tag', '文件与标签关系'), ('file_to_user', '文件与用户关系'),
+                                                 ('file_to_file', '文件与文件关系')])
+    operation_result = models.CharField(max_length=50, verbose_name='操作结果',
+                                        choices=[('success', '成功'), ('fail', '失败')])
+    operation_detail = models.TextField(verbose_name='操作详情', null=True, default='')
+    operation_time = models.DateTimeField(auto_now_add=True, verbose_name='操作时间')
 
     class Meta:
-        verbose_name = '登录日志'
-        verbose_name_plural = '登录日志'
-        ordering = ['-created_at']
-        db_table = 'login_log'
+        verbose_name = '日志'
+        verbose_name_plural = '日志'
+        ordering = ['-operation_time']
+        db_table = 'log'
 
-    def __str__(self):
-        return f'{self.username} ({self.uuid})'
+
+class AutidLog(models.Model):
+    """
+    审计日志模型
+    """
+    action = models.CharField(max_length=50, verbose_name='操作类型')
+    conn_id = models.IntegerField(verbose_name='连接ID')
+    initiating_ip = models.CharField(max_length=50, verbose_name='发起IP')
+    session_id = models.CharField(max_length=50, verbose_name='会话ID')
+    controller_uuid = models.ForeignKey(SystemInfo, to_field='uuid', on_delete=models.CASCADE,
+                                        verbose_name='控制端UUID', related_name='auditlog_controller')
+    controlled_uuid = models.ForeignKey(SystemInfo, to_field='uuid', on_delete=models.CASCADE,
+                                        verbose_name='被控端UUID', related_name='auditlog_controlled')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
+
+    class Meta:
+        verbose_name = '审计日志'
+        verbose_name_plural = '审计日志'
+        ordering = ['-created_at']
+        db_table = 'audit_log'
+
+
+class AuditFile(models.Model):
+    """
+    审计文件模型
+    """
+    conn_id = models.IntegerField(verbose_name='连接ID')
+    controller_uuid = models.ForeignKey(SystemInfo, to_field='uuid', on_delete=models.CASCADE, max_length=255,
+                                        verbose_name='控制端UUID', related_name='auditfile_controller')
+    controlled_uuid = models.ForeignKey(SystemInfo, to_field='uuid', on_delete=models.CASCADE, max_length=255,
+                                        verbose_name='被控端UUID', related_name='auditfile_controlled')
+    operation_type = models.IntegerField(verbose_name='操作类型', default=1)
+    operation_info = models.CharField(verbose_name='操作信息', null=True, default='')
+    is_file = models.BooleanField(verbose_name='是否文件')
+    remote_path = models.CharField(verbose_name='远程路径', null=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
+
+    class Meta:
+        verbose_name = '审计文件'
+        verbose_name_plural = '审计文件'
+        ordering = ['-created_at']
+        db_table = 'audit_file'

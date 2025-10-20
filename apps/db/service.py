@@ -10,7 +10,7 @@ from django.db.models import QuerySet
 from django.http import HttpRequest
 
 from apps.common.utils import get_local_time
-from apps.db.models import HeartBeat, SystemInfo, LoginLog, Token, LoginClient, TagToClient, Tag, UserToTag
+from apps.db.models import HeartBeat, SystemInfo, Token, LoginClient, TagToClient, Tag, UserToTag, Log
 
 logger = logging.getLogger(__name__)
 
@@ -252,46 +252,6 @@ class LoginClientService(BaseService):
         return self.query(username=self.get_username(username)).all()
 
 
-class LoginLogService(BaseService):
-    """
-    登录日志服务类
-
-    用于处理登录日志的相关业务逻辑
-    """
-    db = LoginLog
-
-    def create(self, **kwargs) -> LoginLog:
-        """
-        创建登录日志记录
-
-        :param kwargs: 登录日志的字段值
-        :return: 创建的登录日志对象
-        """
-        # 从 deviceInfo 中提取设备信息
-        device_info = kwargs.pop('deviceInfo', {})
-        if device_info:
-            kwargs['os'] = device_info.get('os', '')
-            kwargs['device_type'] = device_info.get('type', '')
-            kwargs['device_name'] = device_info.get('name', '')
-
-        # 处理字段名映射
-        if 'id' in kwargs:
-            kwargs['client_id'] = kwargs.pop('id')
-        if 'type' in kwargs:
-            kwargs['login_type'] = kwargs.pop('type')
-        logger.info(f"创建登录日志: {kwargs}")
-        return super().create(**kwargs)
-
-    def get_login_log(self, uuid, username) -> LoginLog:
-        return self.query(
-            uuid=self.get_uuid(uuid),
-            username=self.get_username(username),
-        ).first()
-
-    def get_list(self, page=1, page_size=10):
-        return super().get_list(page=page, page_size=page_size)
-
-
 class TokenService(BaseService):
     """
     令牌服务类
@@ -415,3 +375,37 @@ class TagService:
 
     def get_tag_client_list(self, tag):
         return self.db_tag2client.objects.filter(tag=tag)
+
+
+class LogService(BaseService):
+    """
+    日志服务类
+
+    用于处理日志相关的业务逻辑
+    """
+    db = Log
+
+    def create_log(self, username, uuid, log_type, log_level='info', log_message=''):
+        """
+        创建日志记录
+
+        :param username: 用户名
+        :param uuid: 设备UUID
+        :param log_type: 日志类型
+        :param log_level: 日志级别
+        :param log_message: 日志消息
+        :return: 新创建的日志实例
+        """
+        log = self.create(
+            username=self.get_username(username),
+            uuid=self.get_uuid(uuid),
+            log_level=log_level,
+            operation_type=log_type,  # 根据实际需求映射到合适的操作类型
+            operation_object='log',  # 根据实际需求设置操作对象
+            operation_result='success',  # 假设日志创建总是成功的
+            operation_detail=log_message,
+            operation_time=get_local_time(),
+        )
+        logger.info(
+            f"创建日志: 用户=\"{username}\", UUID=\"{uuid}\", 类型=\"{log_type}\", 级别=\"{log_level}\", 消息=\"{log_message}\"")
+        return log

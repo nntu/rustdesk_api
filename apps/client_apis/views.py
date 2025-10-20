@@ -10,8 +10,8 @@ from django.views.decorators.http import require_http_methods
 from apps.client_apis.common import check_login
 from apps.common.utils import get_local_time
 from apps.db.models import SystemInfo
-from apps.db.service import HeartBeatService, SystemInfoService, TokenService, UserService, LoginLogService, \
-    LoginClientService, TagService
+from apps.db.service import HeartBeatService, SystemInfoService, TokenService, UserService, \
+    LoginClientService, TagService, LogService
 
 logger = logging.getLogger(__name__)
 
@@ -78,7 +78,8 @@ def login(request: HttpRequest):
     :param request: HTTP请求对象
     :return: JSON响应对象
     """
-    logger.debug(f'login post_body: {request.body}')
+    logger.debug(f'login headers: {request.headers}')
+    logger.debug(f'login body: {request.body}')
     body = json.loads(request.body.decode('utf-8'))
     username = body.get('username')
     password = body.get('password')
@@ -102,17 +103,11 @@ def login(request: HttpRequest):
         client_id=body.get('id'),
     )
 
-    # 创建登录日志
-    login_log_service = LoginLogService()
-    login_log_service.create(
-        username=user,
-        uuid=SystemInfoService().get_client_info_by_uuid(uuid),
-        client_id=body.get('id'),
-        login_type=body.get('login_type', 'access_token'),
-        login_status=True,
-        os=body['deviceInfo'].get('os'),
-        device_type=body['deviceInfo'].get('type'),
-        device_name=body['deviceInfo'].get('name'),
+    LogService().create_log(
+        username=username,
+        uuid=uuid,
+        log_type='login',
+        log_message=f'用户 {username} 登录'
     )
 
     return JsonResponse(
@@ -129,6 +124,8 @@ def login(request: HttpRequest):
 @require_http_methods(["POST"])
 @check_login
 def logout(request: HttpRequest):
+    logger.debug(f'logout headers: {request.headers}')
+    logger.debug(f'logout body: {request.body}')
     body = json.loads(request.body.decode('utf-8'))
     # print(body)
     uuid = body.get('uuid')
@@ -143,17 +140,11 @@ def logout(request: HttpRequest):
         client_id=body.get('id'),
     )
 
-    login_log_service = LoginLogService()
-    login_log = login_log_service.get_login_log(uuid=uuid, username=user_info)
-    login_log_service.create(
+    LogService().create_log(
         username=user_info,
-        uuid=SystemInfoService().get_client_info_by_uuid(uuid),
-        client_id=login_log.client_id,
-        login_type=login_log.login_type,
-        login_status=False,
-        os=login_log.os,
-        device_type=login_log.device_type,
-        device_name=login_log.device_name,
+        uuid=uuid,
+        log_type='login',
+        log_message=f'用户 {user_info} 退出登录'
     )
     return JsonResponse({'code': 1})
 
@@ -378,3 +369,43 @@ def device_group_accessible(request):
     }
     print(result)
     return JsonResponse(result)
+
+
+def audit_conn(request):
+    """
+    连接日志
+    :param request:
+    :return:
+    """
+    logger.debug(f'autid conn headers: {request.headers}')
+    logger.debug(f'autid conn body: {request.body}')
+    return JsonResponse(
+        {
+            'code': 1,
+            'data': {
+                'status': 1,
+                'message': 'success'
+            }
+        }
+    )
+
+
+def audit_file(request):
+    """
+    文件日志
+    :param request:
+    :return:
+    """
+    logger.debug(f'autid file: {request.body}')
+    # {"id":"488591401","info":"{\\"files\\":[[\\"\\",52923]],\\"ip\\":\\"172.16.41.91\\",\\"name\\":\\"Admin\\",\\"num\\":1}","is_file":true,"path":"C:\\\\Users\\\\Joker\\\\Downloads\\\\api_swagger.json","peer_id":"1508540501","type":1,"uuid":"MjI5MzdiMDAtNjExNy00OTVmLWFjNWUtNGM2MTc2NTE1Zjdl"}
+    # {"id":"488591401","info":"{\\"files\\":[[\\"\\",801524]],\\"ip\\":\\"172.16.41.91\\",\\"name\\":\\"Admin\\",\\"num\\":1}","is_file":true,"path":"C:\\\\Users\\\\Joker\\\\Downloads\\\\782K.ofd","peer_id":"1508540501","type":0,"uuid":"MjI5MzdiMDAtNjExNy00OTVmLWFjNWUtNGM2MTc2NTE1Zjdl"}
+
+    return JsonResponse(
+        {
+            'code': 1,
+            'data': {
+                'status': 1,
+                'message': 'success'
+            }
+        }
+    )
