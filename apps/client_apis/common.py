@@ -1,6 +1,12 @@
+import json
+import logging
+from uuid import uuid1
+
 from django.http import HttpRequest, JsonResponse
 
 from apps.db.service import TokenService, LoginClientService, SystemInfoService
+
+logger = logging.getLogger('request_debug_log')
 
 
 def check_login(func):
@@ -10,6 +16,7 @@ def check_login(func):
     :param func: 被装饰的函数
     :return: 装饰后的函数
     """
+
     def wrapper(request: HttpRequest, *args, **kwargs):
         headers = request.headers
         if 'Authorization' not in headers:
@@ -30,4 +37,40 @@ def check_login(func):
             return JsonResponse({'error': '登录已过期'}, status=401)
         token_service.update_token(token)
         return func(request, *args, **kwargs)
+
+    return wrapper
+
+
+def request_debug_log(func):
+    """
+    记录请求日志的装饰器
+
+    :param func: 被装饰的函数
+    :return: 装饰后的函数
+    """
+
+    def wrapper(request: HttpRequest, *args, **kwargs):
+        __uuid = str(uuid1().hex)
+        log_data = {
+            'request_uuid': __uuid,
+            'method': request.method,
+            'path': request.path,
+            'headers': dict(request.headers),
+        }
+        if request.body:
+            log_data['request_body'] = json.loads(request.body)
+        elif post := request.POST:
+            log_data['request_post_body'] = post.dict()
+
+        logger.debug(json.dumps(log_data))
+        response = func(request, *args, **kwargs)
+        logger.debug(json.dumps(
+            {
+                'request_uuid': __uuid,
+                'status_code': response.status_code,
+                'response_body': json.loads(response.content),
+            }
+        ))
+        return response
+
     return wrapper

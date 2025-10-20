@@ -128,6 +128,16 @@ LOGGING = {
             'backupCount': 7,
             'formatter': 'verbose',
         },
+        'request_debug_file': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.TimedRotatingFileHandler',
+            'filename': os.path.join(BASE_DIR, 'logs/request_debug.log'),
+            'encoding': 'utf8',
+            'delay': True,
+            'when': 'midnight',
+            'backupCount': 7,
+            'formatter': 'verbose',
+        },
         'console': {
             'level': 'DEBUG',
             'class': 'logging.StreamHandler',
@@ -154,6 +164,11 @@ LOGGING = {
         'custom': {
             'handlers': ['file', 'console'],
             'level': 'INFO',
+            'propagate': False,
+        },
+        'request_debug_log': {
+            'handlers': ['request_debug_file'],
+            'level': 'DEBUG',
             'propagate': False,
         },
     },

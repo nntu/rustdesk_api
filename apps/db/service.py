@@ -1,8 +1,7 @@
-import hashlib
 import logging
-import time
 from datetime import timedelta
 from typing import TypeVar
+from uuid import uuid1
 
 from django.contrib.auth.models import User
 from django.db import models
@@ -153,6 +152,7 @@ class UserService(BaseService):
         user.set_password(password)
         user.save()
         logger.info(f'设置用户密码: {user}')
+        return user
 
     def get_list(self, status, page=1, page_size=10):
         return super().get_list(
@@ -260,19 +260,9 @@ class TokenService(BaseService):
     """
     db = Token
 
-    @staticmethod
-    def get_str_md5(s):
-        if not isinstance(s, (str,)):
-            s = str(s)
-
-        myHash = hashlib.md5()
-        myHash.update(s.encode())
-
-        return myHash.hexdigest()
-
     def create_token(self, username, uuid):
         username = username.username if isinstance(username, User) else username
-        token = f'{self.get_str_md5(uuid + str(time.time()))}_{username}'
+        token = f'{uuid1().hex}_{username}'
         self.create(
             username=self.get_username(username),
             uuid=self.get_uuid(uuid),
@@ -293,7 +283,7 @@ class TokenService(BaseService):
         if _token := self.query(token=token).first():
             _token.last_used_at = get_local_time()
             _token.save()
-            return Token
+            return True
         return False
 
     def update_token_by_uuid(self, uuid):
@@ -301,7 +291,7 @@ class TokenService(BaseService):
             _token.last_used_at = get_local_time()
             _token.save()
             logger.info(f"通过uuid更新令牌: {uuid} - {_token.token}")
-            return Token
+            return True
         return False
 
     def delete_token(self, token):

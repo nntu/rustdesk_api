@@ -7,7 +7,7 @@ from django.http import HttpRequest, JsonResponse
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
-from apps.client_apis.common import check_login
+from apps.client_apis.common import check_login, request_debug_log
 from apps.common.utils import get_local_time
 from apps.db.models import SystemInfo
 from apps.db.service import HeartBeatService, SystemInfoService, TokenService, UserService, \
@@ -35,6 +35,7 @@ def time_test(request: HttpRequest):
 
 
 @require_http_methods(["POST"])
+@request_debug_log
 def heartbeat(request: HttpRequest):
     request_data = json.loads(request.body.decode('utf-8'))
     uuid = request_data.get('uuid')
@@ -52,12 +53,12 @@ def heartbeat(request: HttpRequest):
 
 
 @require_http_methods(["POST"])
+@request_debug_log
 def sysinfo(request: HttpRequest):
     body = json.loads(request.body.decode('utf-8'))
     uuid = body.get('uuid')
 
-    TokenService().update_token_by_uuid(uuid)
-
+    # 先更新设备信息
     SystemInfoService().update(
         uuid=uuid,
         client_id=body.get('id'),
@@ -68,10 +69,15 @@ def sysinfo(request: HttpRequest):
         username=body.get('username'),
         version=body.get('version'),
     )
+
+    # 如果当前设备登录过，则更新token
+    TokenService().update_token_by_uuid(uuid)
+
     return JsonResponse({'status': 'ok'})
 
 
 @require_http_methods(["POST"])
+@request_debug_log
 def login(request: HttpRequest):
     """
     处理用户登录请求
@@ -122,12 +128,12 @@ def login(request: HttpRequest):
 
 
 @require_http_methods(["POST"])
+@request_debug_log
 @check_login
 def logout(request: HttpRequest):
     logger.debug(f'logout headers: {request.headers}')
     logger.debug(f'logout body: {request.body}')
     body = json.loads(request.body.decode('utf-8'))
-    # print(body)
     uuid = body.get('uuid')
     token_service = TokenService()
     token, user_info = token_service.get_user_token(request)
@@ -150,6 +156,7 @@ def logout(request: HttpRequest):
 
 
 @require_http_methods(["GET", "POST"])
+@request_debug_log
 @check_login
 def ab(request: HttpRequest):
     """
@@ -174,9 +181,7 @@ def ab(request: HttpRequest):
         token_service = TokenService()
         token, user_info = token_service.get_user_token(request)
         body = json.loads(request.body.decode('utf-8'))
-        # print(111, body)
         data = json.loads(body.get('data')) if body.get('data') else {}
-        # print(111, data)
 
         tag_service = TagService(user_info)
         try:
@@ -192,6 +197,7 @@ def ab(request: HttpRequest):
 
 
 @require_http_methods(["POST"])
+@request_debug_log
 @check_login
 def ab_personal(request: HttpRequest):
     """
@@ -199,7 +205,6 @@ def ab_personal(request: HttpRequest):
     :param request:
     :return:
     """
-    # print(request.body)
     token_service = TokenService()
     token, user_info = token_service.get_user_token(request)
     tag_service = TagService(user_info)
@@ -213,11 +218,11 @@ def ab_personal(request: HttpRequest):
         'code': 1,
         'updated_at': get_local_time().isoformat()
     }
-    # print(result)
     return JsonResponse(result)
 
 
 @require_http_methods(["POST"])
+@request_debug_log
 @check_login
 def current_user(request: HttpRequest):
     """
@@ -238,6 +243,7 @@ def current_user(request: HttpRequest):
 
 
 @require_http_methods(["GET"])
+@request_debug_log
 @check_login
 def users(request: HttpRequest):
     """
@@ -275,6 +281,7 @@ def users(request: HttpRequest):
 
 
 @require_http_methods(["GET"])
+@request_debug_log
 @check_login
 def peers(request: HttpRequest):
     """
@@ -321,6 +328,7 @@ def peers(request: HttpRequest):
 
 
 @require_http_methods(["GET"])
+@request_debug_log
 @check_login
 def device_group_accessible(request):
     """
@@ -367,10 +375,12 @@ def device_group_accessible(request):
         'total': len(client_list),
         'data': data
     }
-    print(result)
     return JsonResponse(result)
 
 
+@require_http_methods(["POST"])
+@request_debug_log
+@check_login
 def audit_conn(request):
     """
     连接日志
@@ -390,6 +400,9 @@ def audit_conn(request):
     )
 
 
+@require_http_methods(["POST"])
+@request_debug_log
+@check_login
 def audit_file(request):
     """
     文件日志
