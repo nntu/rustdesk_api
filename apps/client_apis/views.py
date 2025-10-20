@@ -1,5 +1,4 @@
 import json
-import json
 import logging
 import traceback
 
@@ -128,6 +127,7 @@ def login(request: HttpRequest):
 
 
 @require_http_methods(["POST"])
+@check_login
 def logout(request: HttpRequest):
     body = json.loads(request.body.decode('utf-8'))
     # print(body)

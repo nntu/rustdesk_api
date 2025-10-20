@@ -366,7 +366,7 @@ class TokenService(BaseService):
     #     return None
 
     @staticmethod
-    def get_user_token(request: HttpRequest):
+    def get_user_token(request: HttpRequest) -> tuple[str, User]:
         authorization = request.headers.get('Authorization')[7:]
         username = authorization.split('_')[-1]
         return authorization, UserService().get_user_by_name(username)
