@@ -256,20 +256,20 @@ class PermissionService(BaseService):
     def get_permissions_list(self):
         return self.db.objects.all()
 
-    def create_permission(self, content_type_id, name, codename):
+    def create_permission(self, content_type_id, name, codename) -> Permission:
         return self.create(
             content_type_id=content_type_id,
             name=name,
             codename=codename
         )
 
-    def get_by_content_type_id(self, content_type_id):
+    def get_by_content_type_id(self, content_type_id) -> QuerySet[Permission]:
         return self.query(content_type_id=content_type_id).all()
 
-    def get_by_codename(self, codename):
+    def get_by_codename(self, codename) -> QuerySet[Permission]:
         return self.query(codename=codename).all()
 
-    def get_by_name(self, name):
+    def get_by_name(self, name) -> QuerySet[Permission]:
         return self.query(name=name).all()
 
     def get_permissions(self, *permission_name):
