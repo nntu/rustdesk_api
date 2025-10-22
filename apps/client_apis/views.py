@@ -252,7 +252,7 @@ def users(request: HttpRequest):
     token_service = TokenService()
     token, user_info = token_service.get_user_token(request)
     if user_info.is_superuser:
-        result = UserService().get_list(status=status, page=page, page_size=page_size)['results']
+        result = UserService().get_list_by_status(status=status, page=page, page_size=page_size)['results']
     else:
         result = [user_info]
 

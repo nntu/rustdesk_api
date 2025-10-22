@@ -2,7 +2,7 @@ import logging
 from datetime import timedelta
 from typing import TypeVar
 
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group, Permission
 from django.db import models
 from django.db.models import QuerySet
 from django.http import HttpRequest
@@ -116,6 +116,18 @@ class BaseService:
             uuid = SystemInfoService().get_client_info_by_uuid(uuid)
         return uuid
 
+    def filter_in(self, field, *args):
+        """
+        返回包含指定字段值的结果
+        :param field:
+        :param args:
+        :return:
+        """
+
+        return self.db.objects.filter(
+            eval(f'{field}__in=[*{args}]')
+        ).all()
+
 
 class UserService(BaseService):
     db = User
@@ -156,10 +168,112 @@ class UserService(BaseService):
         logger.info(f'设置用户密码: {user}')
         return user
 
-    def get_list(self, status, page=1, page_size=10):
-        return super().get_list(
-            filters={'is_active': status}, page=page, page_size=page_size
+    def __get_list(self, **kwargs):
+        """
+        通用分页查询方法
+
+        :param filters: 查询条件字典
+        :param ordering: 排序字段列表
+        :param page: 当前页码
+        :param page_size: 每页记录数
+        :return: 包含分页信息的字典
+        """
+        page = int(kwargs.pop('page', 1))
+        page_size = int(kwargs.pop('page_size', 10))
+
+        filters = kwargs.pop('filters', {})
+        queryset = self.db.objects.filter(**filters)
+
+        if ordering := kwargs.pop('ordering', []):
+            queryset = queryset.order_by(*ordering)
+
+        total = queryset.count()
+        results = queryset[(page - 1) * page_size: page * page_size]
+
+        return {
+            'results': results,
+            'total': total,
+            'page': page,
+            'page_size': page_size,
+            'total_pages': (total + page_size - 1) // page_size
+        }
+
+    def get_list_by_status(self, status, page=1, page_size=10):
+        return self.__get_list(status=status, page=page, page_size=page_size)
+
+    def set_user_permissions(self, username, *permissions):
+        permissions = self.filter_in('codename', *permissions)
+        user = self.get_user_by_name(username)
+        if user:
+            user.user_permissions.add(*permissions)
+
+    def del_user_permissions(self, username, *permissions):
+        permissions = self.filter_in('codename', *permissions)
+
+        user = self.get_user_by_name(username)
+        if user:
+            user.user_permissions.remove(*permissions)
+
+    def get_user_permissions(self, username):
+        user = self.get_user_by_name(username)
+        if user:
+            return user.user_permissions.all()
+        return None
+
+    def is_user_has_permission(self, username, *permissions) -> bool:
+        permissions = self.filter_in('codename', *permissions)
+        user = self.get_user_by_name(username)
+        if user:
+            return user.has_perm(*permissions)
+        return False
+
+
+class GroupService(BaseService):
+    db = Group
+
+    def get_group_by_name(self, name) -> Group:
+        return self.query(name=name).first()
+
+    def create_group(self, name, permissions=None) -> Group:
+        if permissions is None:
+            permissions = []
+        group = self.create(name=name)
+        group.permissions.set(permissions)
+        logger.info(f'创建用户组: {group}')
+        return group
+
+    def add_user_to_group(self, group_name, *username: User | str):
+        group = self.get_group_by_name(group_name)
+        # 批量获取用户并添加到组中
+        users = UserService().db.objects.filter(username__in=username)
+        if users.exists():
+            group.user_set.add(*users)
+
+
+class PermissionService(BaseService):
+    db = Permission
+
+    def get_permissions_list(self):
+        return self.db.objects.all()
+
+    def create_permission(self, content_type_id, name, codename):
+        return self.create(
+            content_type_id=content_type_id,
+            name=name,
+            codename=codename
         )
+
+    def get_by_content_type_id(self, content_type_id):
+        return self.query(content_type_id=content_type_id).all()
+
+    def get_by_codename(self, codename):
+        return self.query(codename=codename).all()
+
+    def get_by_name(self, name):
+        return self.query(name=name).all()
+
+    def get_permissions(self, *permission_name):
+        return self.db.objects.filter(name__in=permission_name).all()
 
 
 class SystemInfoService(BaseService):

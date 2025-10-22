@@ -2,7 +2,7 @@ import uuid
 
 from django.core.management.base import BaseCommand
 
-from apps.db.service import UserService
+from apps.db.service import UserService, GroupService
 
 
 class Command(BaseCommand):
@@ -43,20 +43,24 @@ class Command(BaseCommand):
         :param options: 命令行选项字典
         """
         user_service = UserService()
+        group_service = GroupService()
 
         if options.get('init'):
             pwd = uuid.uuid1().hex[-8:]
             if not user_service.get_user_by_name('admin'):
-                user_service.create_user(
+                user = user_service.create_user(
                     username='admin',
                     password=pwd,
                     email='',
                     is_superuser=True,
                     is_staff=True
                 )
+                group = group_service.create_group('Default')
+                group_service.add_user_to_group(user, group)
                 print(f'管理员账号初始化成功，管理员密码：{pwd}')
             else:
                 print('管理员账号已存在')
+
 
         elif new_pwd := options.get('set_pwd'):
             if user := user_service.get_user_by_name('admin'):
