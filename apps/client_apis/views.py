@@ -11,7 +11,7 @@ from apps.client_apis.common import check_login, request_debug_log
 from apps.common.utils import get_local_time
 from apps.db.models import SystemInfo
 from apps.db.service import HeartBeatService, SystemInfoService, TokenService, UserService, \
-    LoginClientService, TagService, AuditConnService, PersonalService
+    TagService, AuditConnService, PersonalService
 
 logger = logging.getLogger(__name__)
 
@@ -296,10 +296,7 @@ def peers(request: HttpRequest):
     user_info = token_service.user_info
     uuid = token_service.get_cur_uuid_by_token(token)
 
-    if user_info.is_superuser:
-        client_list = SystemInfoService().get_list()
-    else:
-        client_list = LoginClientService().get_login_client_list(user_info)
+    client_list = SystemInfoService().get_list()
     data = []
     for client in client_list:
         client = client if isinstance(client, SystemInfo) else client.uuid
@@ -456,21 +453,6 @@ def audit_file(request):
 @require_http_methods(["POST"])
 @request_debug_log
 @check_login
-def ap_peers(request):
-    return JsonResponse(
-        {
-            'code': 1,
-            'data': {
-                'status': 1,
-                'message': 'success'
-            }
-        }
-    )
-
-
-@require_http_methods(["POST"])
-@request_debug_log
-@check_login
 def ab_tags(request, guid):
     tag_service = TagService(guid=guid)
     tags = tag_service.get_all_tags()
@@ -559,18 +541,35 @@ def ab_shared_profiles(request):
     )
 
 
+@require_http_methods(["GET"])
 @request_debug_log
 def ab_peers(request):
-    return JsonResponse(
-        {
-            'code': 1,
-            'data': {
-                'status': 1,
-                'message': 'success'
-            }
-        }
-    )
+    token_service = TokenService(request=request)
+    user_info = token_service.user_info
 
+    client_list = SystemInfoService().get_list()
+    data = []
+    for client in client_list:
+        client = client if isinstance(client, SystemInfo) else client.uuid
+        # if client.uuid == uuid:
+        #     continue
+        data.append(
+            {
+                "id": client.client_id,
+                "info": {
+                    "device_name": client.device_name,
+                    "os": client.os,
+                    "username": client.username,
+                },
+                "status": 1,
+                "user_name": user_info.username,
+            }
+        )
+    result = {
+        'total': len(client_list),
+        'data': data
+    }
+    return JsonResponse(result)
 
 @request_debug_log
 def ab_peer_add(request, guid):

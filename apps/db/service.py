@@ -365,7 +365,7 @@ class SystemInfoService(BaseService):
         logger.info(f"更新设备信息: {kwargs}")
 
     def get_list(self):
-        return self.db.objects.all()
+        return list(self.db.objects.all())
 
 
 class HeartBeatService(BaseService):

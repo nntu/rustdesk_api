@@ -12,7 +12,6 @@ urlpatterns = [
     path('users', views.users),
     path('peers', views.peers),
     path('ab/personal', views.ab_personal),
-    path('ap/peers', views.ap_peers),
     path('ab/peer/add/<str:guid>', views.ab_peer_add),
     path('ab/tags/<str:guid>', views.ab_tags),
     path('ab/tag/add/<str:guid>', views.ab_tag_add),
