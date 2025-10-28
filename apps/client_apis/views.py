@@ -11,7 +11,7 @@ from apps.client_apis.common import check_login, request_debug_log
 from apps.common.utils import get_local_time
 from apps.db.models import SystemInfo
 from apps.db.service import HeartBeatService, SystemInfoService, TokenService, UserService, \
-    LoginClientService, TagService, LogService, AuditConnService
+    LoginClientService, TagService, AuditConnService, PersonalService
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +49,7 @@ def heartbeat(request: HttpRequest):
         modified_at=modified_at,
         ver=ver,
     )
-    return JsonResponse({'status': 'ok'})
+    return HttpResponse(status=200)
 
 
 @require_http_methods(["POST"])
@@ -71,9 +71,9 @@ def sysinfo(request: HttpRequest):
     )
 
     # 如果当前设备登录过，则更新token
-    TokenService().update_token_by_uuid(uuid)
+    TokenService(request=request).update_token_by_uuid(uuid)
 
-    return JsonResponse({'status': 'ok'})
+    return HttpResponse(status=200)
 
 
 @require_http_methods(["POST"])
@@ -84,7 +84,9 @@ def login(request: HttpRequest):
     :param request: HTTP请求对象
     :return: JSON响应对象
     """
-    body = json.loads(request.body.decode('utf-8'))
+    token_service = TokenService(request=request)
+    body = token_service.request_body
+
     username = body.get('username')
     password = body.get('password')
     uuid = body.get('uuid')
@@ -96,21 +98,21 @@ def login(request: HttpRequest):
         logger.error(traceback.format_exc())
         return JsonResponse({'error': '用户名或密码错误'})
 
-    token = TokenService().create_token(username, uuid)
+    token = token_service.create_token(username, uuid)
 
     # Server端记录登录信息
-    LoginClientService().update_login_status(
-        uuid=SystemInfoService().get_client_info_by_uuid(uuid),
-        username=user,
-        client_id=body.get('id'),
-    )
-
-    LogService().create_log(
-        username=username,
-        uuid=uuid,
-        log_type='login',
-        log_message=f'用户 {username} 登录'
-    )
+    # LoginClientService().update_login_status(
+    #     uuid=SystemInfoService().get_client_info_by_uuid(uuid),
+    #     username=user,
+    #     client_id=body.get('id'),
+    # )
+    #
+    # LogService().create_log(
+    #     username=username,
+    #     uuid=uuid,
+    #     log_type='login',
+    #     log_message=f'用户 {username} 登录'
+    # )
 
     return JsonResponse(
         {
@@ -127,25 +129,28 @@ def login(request: HttpRequest):
 @request_debug_log
 @check_login
 def logout(request: HttpRequest):
-    body = json.loads(request.body.decode('utf-8'))
+    token_service = TokenService(request=request)
+    token = token_service.authorization
+    user_info = token_service.user_info
+    body = token_service.request_body
+
     uuid = body.get('uuid')
-    token_service = TokenService()
-    token, user_info, body = token_service.get_request_info(request)
+
     token_service.delete_token(token)
 
     # 更新登出状态
-    LoginClientService().update_logout_status(
-        uuid=uuid,
-        username=user_info,
-        client_id=body.get('id'),
-    )
-
-    LogService().create_log(
-        username=user_info,
-        uuid=uuid,
-        log_type='logout',
-        log_message=f'用户 {user_info} 退出登录'
-    )
+    # LoginClientService().update_logout_status(
+    #     uuid=uuid,
+    #     username=user_info,
+    #     client_id=body.get('id'),
+    # )
+    #
+    # LogService().create_log(
+    #     username=user_info,
+    #     uuid=uuid,
+    #     log_type='logout',
+    #     log_message=f'用户 {user_info} 退出登录'
+    # )
     return JsonResponse({'code': 1})
 
 
@@ -172,9 +177,9 @@ def ab(request: HttpRequest):
             }
         )
     elif request.method == 'POST':
-        token_service = TokenService()
-        token, user_info, body = token_service.get_request_info(request)
-        body = json.loads(request.body.decode('utf-8'))
+        token_service = TokenService(request=request)
+        user_info = token_service.user_info
+        body = token_service.request_body
         data = json.loads(body.get('data')) if body.get('data') else {}
 
         tag_service = TagService(user_info)
@@ -199,12 +204,12 @@ def ab_personal(request: HttpRequest):
     :param request:
     :return:
     """
-    token_service = TokenService()
-    token, user_info, body = token_service.get_request_info(request)
-    user_service = UserService()
+    token_service = TokenService(request=request)
+    user_info = token_service.user_info
+    guid = user_info.user_personal.get(personal__personal_type='private').personal.guid
     return JsonResponse(
         {
-            "guid": user_service.get_guid(user_info),
+            "guid": guid,
             "name": user_info.username,
             "rule": 3
         }
@@ -220,8 +225,9 @@ def current_user(request: HttpRequest):
     :param request:
     :return:
     """
-    token_service = TokenService()
-    token, user_info, body = token_service.get_request_info(request)
+    token_service = TokenService(request=request)
+    token = token_service.authorization
+    user_info = token_service.user_info
 
     return JsonResponse(
         {
@@ -244,8 +250,8 @@ def users(request: HttpRequest):
     page = int(request.GET.get('current', 1))
     page_size = int(request.GET.get('pageSize', 10))
     status = int(request.GET.get('status', 1))
-    token_service = TokenService()
-    token, user_info, body = token_service.get_request_info(request)
+    token_service = TokenService(request=request)
+    user_info = token_service.user_info
     if user_info.is_superuser:
         result = UserService().get_list_by_status(status=status, page=page, page_size=page_size)['results']
     else:
@@ -285,8 +291,9 @@ def peers(request: HttpRequest):
     page = int(request.GET.get('current', 1))
     page_size = int(request.GET.get('pageSize', 10))
 
-    token_service = TokenService()
-    token, user_info, body = token_service.get_request_info(request)
+    token_service = TokenService(request=request)
+    token = token_service.authorization
+    user_info = token_service.user_info
     uuid = token_service.get_cur_uuid_by_token(token)
 
     if user_info.is_superuser:
@@ -329,9 +336,8 @@ def device_group_accessible(request):
     page = int(request.GET.get('current', 1))
     page_size = int(request.GET.get('pageSize', 10))
 
-    token_service = TokenService()
-    token, user_info, body = token_service.get_request_info(request)
-    uuid = token_service.get_cur_uuid_by_token(token)
+    token_service = TokenService(request=request)
+    user_info = token_service.user_info
 
     if user_info.is_superuser:
         client_list = SystemInfoService().get_list(page=page, page_size=page_size)['results']
@@ -466,8 +472,8 @@ def ap_peers(request):
 @request_debug_log
 @check_login
 def ab_tags(request, guid):
-    token_service = TokenService()
-    token, user_info, body = token_service.get_request_info(request)
+    token_service = TokenService(request=request)
+    user_info = token_service.user_info
 
     tag_service = TagService(user_info)
     tags = tag_service.get_all_tags()
@@ -489,8 +495,8 @@ def ab_tag_add(request, guid):
     tag = body.get('name')
     color = body.get('color')
 
-    token_service = TokenService()
-    token, user_info, body = token_service.get_request_info(request)
+    token_service = TokenService(request=request)
+    user_info = token_service.user_info
     tag_service = TagService(user_info)
     tag_service.create_tag(tag=tag, color=color)
     return HttpResponse(status=200)
@@ -500,8 +506,9 @@ def ab_tag_add(request, guid):
 @request_debug_log
 @check_login
 def ab_tag_rename(request, guid):
-    token_service = TokenService()
-    token, user_info, body = token_service.get_request_info(request)
+    token_service = TokenService(request=request)
+    user_info = token_service.user_info
+    body = token_service.request_body
 
     tag_old = body.get('old')
     tag_new = body.get('new')
@@ -515,8 +522,9 @@ def ab_tag_rename(request, guid):
 @request_debug_log
 @check_login
 def ab_tag(request, guid):
-    token_service = TokenService()
-    token, user_info, body = token_service.get_request_info(request)
+    token_service = TokenService(request=request)
+    user_info = token_service.user_info
+    body = token_service.request_body
     tags = body
     tag_service = TagService(user_info)
     tag_service.delete_tag(*list(tags))
@@ -578,3 +586,47 @@ def ab_peers(request):
             }
         }
     )
+
+
+@request_debug_log
+def ab_peer_add(request, guid):
+    # {
+    #     "id": "163052894",
+    #     "username": "lenovo",
+    #     "hostname": "lenovodemac-mini",
+    #     "platform": "Mac OS",
+    #     "alias": "",
+    #     "tags": [],
+    #     "forceAlwaysRelay": "false",
+    #     "rdpPort": "",
+    #     "rdpUsername": "",
+    #     "loginName": "admin",
+    #     "device_group_name": "",
+    #     "same_server": null
+    # }
+    token_service = TokenService(request=request)
+    body = token_service.request_body
+    try:
+        PersonalService().add_peer_to_personal(
+            guid=guid,
+            peer_id=body.get('id'),
+        )
+        return JsonResponse(
+            {
+                'code': 1,
+                'data': {
+                    'status': 1,
+                    'message': 'success'
+                }
+            }
+        )
+    except:
+        return JsonResponse(
+            {
+                'code': 1,
+                'data': {
+                    'status': 1,
+                    'message': 'success'
+                }
+            }
+        )

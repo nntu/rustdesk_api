@@ -1,5 +1,7 @@
-from django.contrib.auth.models import User, Group
+from django.contrib.auth.models import User, Group, AbstractUser
 from django.db import models
+
+from apps.common.utils import get_uuid
 
 
 # Create your models here.
@@ -81,8 +83,10 @@ class Tag(models.Model):
 
 
 class TagToClient(models.Model):
-    tag_id = models.ForeignKey(Tag, to_field='id', on_delete=models.CASCADE, verbose_name='标签')
-    client = models.ForeignKey(SystemInfo, to_field='uuid', on_delete=models.CASCADE, verbose_name='设备UUID')
+    tag_id = models.ForeignKey(Tag, to_field='id', on_delete=models.CASCADE, verbose_name='标签',
+                               related_name='tag_to_peer')
+    client = models.ForeignKey(SystemInfo, to_field='uuid', on_delete=models.CASCADE, verbose_name='设备UUID',
+                               related_name='peer_to_tag')
 
     class Meta:
         verbose_name = '标签与设备关系'
@@ -91,8 +95,10 @@ class TagToClient(models.Model):
 
 
 class UserToTag(models.Model):
-    username = models.ForeignKey(User, to_field='username', on_delete=models.CASCADE, verbose_name='用户名')
-    tag_id = models.ForeignKey(Tag, to_field='id', on_delete=models.CASCADE, verbose_name='标签')
+    username = models.ForeignKey(User, to_field='username', on_delete=models.CASCADE, verbose_name='用户名',
+                                 related_name='user_to_tag')
+    tag_id = models.ForeignKey(Tag, to_field='id', on_delete=models.CASCADE, verbose_name='标签',
+                               related_name='tag_to_user')
 
     class Meta:
         verbose_name = '用户与标签关系'
@@ -226,3 +232,63 @@ class UserPrefile(models.Model):
 
     def __str__(self):
         return f'{self.user.username} {self.group.name if self.group else "None"}'
+
+
+class Personal(models.Model):
+    guid = models.CharField(max_length=50, verbose_name='GUID', default=get_uuid(), unique=True)
+    personal_name = models.CharField(max_length=50, verbose_name='地址簿名称')
+    create_user = models.ForeignKey(User, to_field='id', on_delete=models.CASCADE, related_name='personal_create_user')
+    personal_type = models.CharField(verbose_name='地址簿类型', default='public',
+                                     choices=[('public', '公开'), ('private', '私有')])
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
+
+    class Meta:
+        verbose_name = '个人地址簿'
+        verbose_name_plural = '个人地址簿'
+        ordering = ['-created_at']
+        db_table = 'personal'
+
+
+class UserPersonal(models.Model):
+    """
+    用户与个人地址簿关系模型
+    """
+    user = models.ForeignKey(User, to_field='username', on_delete=models.CASCADE, related_name='user_personal')
+    personal = models.ForeignKey(Personal, to_field='id', on_delete=models.CASCADE, related_name='personal_user')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
+
+    class Meta:
+        verbose_name = '用户与个人地址簿关系'
+        verbose_name_plural = '用户与个人地址簿关系'
+        ordering = ['-created_at']
+        db_table = 'user_personal'
+
+
+class GroupPersonal(models.Model):
+    """
+    用户组与个人地址簿关系模型
+    """
+    group = models.ForeignKey(Group, to_field='id', on_delete=models.CASCADE, related_name='group_personal')
+    personal = models.ForeignKey(Personal, to_field='id', on_delete=models.CASCADE, related_name='personal_group')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
+
+    class Meta:
+        verbose_name = '用户组与个人地址簿关系'
+        verbose_name_plural = '用户组与个人地址簿关系'
+        ordering = ['-created_at']
+        db_table = 'group_personal'
+
+
+class PeerPersonal(models.Model):
+    """
+    用户组与个人地址簿关系模型
+    """
+    peer = models.ForeignKey(SystemInfo, to_field='id', on_delete=models.CASCADE, related_name='peer_personal')
+    personal = models.ForeignKey(Personal, to_field='guid', on_delete=models.CASCADE, related_name='personal_peer')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
+
+    class Meta:
+        verbose_name = '用户组与个人地址簿关系'
+        verbose_name_plural = '用户组与个人地址簿关系'
+        ordering = ['-created_at']
+        db_table = 'peer_personal'

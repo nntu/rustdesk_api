@@ -44,19 +44,17 @@ class Command(BaseCommand):
         """
         user_service = UserService()
         group_service = GroupService()
-        default_group = group_service.default_group()
 
         if options.get('init'):
             pwd = uuid.uuid1().hex[-8:]
             if not user_service.get_user_by_name('admin'):
-                user = user_service.create_user(
+                user_service.create_user(
                     username='admin',
                     password=pwd,
                     email='',
                     is_superuser=True,
                     is_staff=True
                 )
-                group_service.add_user_to_group(user, group_name=default_group)
                 print(f'管理员账号初始化成功，管理员密码：{pwd}')
             else:
                 print('管理员账号已存在')

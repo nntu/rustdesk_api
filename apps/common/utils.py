@@ -23,7 +23,11 @@ def get_uuid():
 
     :return: UUID
     """
-    return str(uuid1().hex)
+    return uuid1()
+
+
+def get_uuid_str():
+    return get_uuid().hex
 
 
 def get_md5(data: str):
