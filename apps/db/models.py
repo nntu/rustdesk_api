@@ -96,16 +96,18 @@ class Tag(models.Model):
         return self.tag
 
 
-class TagToClient(models.Model):
-    tag_id = models.ForeignKey(Tag, to_field='id', on_delete=models.CASCADE, verbose_name='标签',
-                               related_name='tag_to_peer')
-    client = models.ForeignKey(SystemInfo, to_field='uuid', on_delete=models.CASCADE, verbose_name='设备UUID',
-                               related_name='peer_to_tag')
+class ClientTags(models.Model):
+    """
+    标签模型
+
+    """
+    peer_id = models.CharField(max_length=255, verbose_name='设备ID')
+    tags = models.CharField(max_length=255, verbose_name='标签名称')
+    guid = models.CharField(max_length=50, verbose_name='GUID')
 
     class Meta:
-        verbose_name = '标签与设备关系'
-        verbose_name_plural = '标签与设备关系'
-        db_table = 'tag_to_client'
+        verbose_name = '标签'
+        db_table = 'client_tags'
 
 
 class Token(models.Model):
@@ -279,3 +281,19 @@ class PeerPersonal(models.Model):
         verbose_name_plural = '用户组与个人地址簿关系'
         ordering = ['-created_at']
         db_table = 'peer_personal'
+
+
+class Alias(models.Model):
+    """
+    别名模型
+    """
+    alias = models.CharField(max_length=50, verbose_name='别名')
+    peer_id = models.CharField(max_length=50, verbose_name='peer_id')
+    guid = models.CharField(max_length=50, verbose_name='guid')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
+
+    class Meta:
+        verbose_name = '别名'
+        verbose_name_plural = '别名'
+        ordering = ['-created_at']
+        db_table = 'alias'

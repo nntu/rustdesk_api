@@ -7,11 +7,11 @@ from django.http import HttpRequest, JsonResponse, HttpResponse
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
-from apps.client_apis.common import check_login, request_debug_log
+from apps.client_apis.common import check_login, request_debug_log, debug_request_None
 from apps.common.utils import get_local_time
 from apps.db.models import SystemInfo
 from apps.db.service import HeartBeatService, SystemInfoService, TokenService, UserService, \
-    TagService, AuditConnService, PersonalService
+    TagService, AuditConnService, PersonalService, AliasService
 
 logger = logging.getLogger(__name__)
 
@@ -299,7 +299,6 @@ def peers(request: HttpRequest):
     client_list = SystemInfoService().get_list()
     data = []
     for client in client_list:
-        client = client if isinstance(client, SystemInfo) else client.uuid
         if client.uuid == uuid:
             continue
         data.append(
@@ -323,6 +322,7 @@ def peers(request: HttpRequest):
 
 @require_http_methods(["GET"])
 @request_debug_log
+@debug_request_None  # 官方对于设备组有权限控制，目前无法控制，直接返回None，接口不报错即可
 @check_login
 def device_group_accessible(request):
     """
@@ -336,17 +336,7 @@ def device_group_accessible(request):
     token_service = TokenService(request=request)
     user_info = token_service.user_info
 
-    if user_info.is_superuser:
-        client_list = SystemInfoService().get_list()
-    else:
-        # client_list = LoginClientService().get_login_client_list(user_info.username)
-        return JsonResponse(
-            {
-                'total': 0,
-                'data': []
-            }
-        )
-
+    client_list = SystemInfoService().get_list()
     data = []
     for client in client_list:
         client = client if isinstance(client, SystemInfo) else client.uuid
@@ -520,56 +510,121 @@ def ab_settings(request):
 
 @request_debug_log
 def ab_shared_profiles(request):
-    return JsonResponse(
-        {
-            "total": 0,
-            "data": [
-                {
-                    "guid": "1-1001-12",
-                    "name": "研发部地址簿",
-                },
-                {
-                    "guid": "1-1002-34",
-                    "name": "IT支持共享",
-                },
-                {
-                    "guid": "1-1003-56",
-                    "name": "外包协作",
-                }
-            ]
-        }
-    )
-
-
-@require_http_methods(["GET"])
-@request_debug_log
-def ab_peers(request):
+    # {
+    #     "total": 0,
+    #     "data": [
+    #         {
+    #             "guid": "1-1001-12",
+    #             "name": "研发部地址簿",
+    #         },
+    #         {
+    #             "guid": "1-1002-34",
+    #             "name": "IT支持共享",
+    #         },
+    #         {
+    #             "guid": "1-1003-56",
+    #             "name": "外包协作",
+    #         }
+    #     ]
+    # }
     token_service = TokenService(request=request)
     user_info = token_service.user_info
 
-    client_list = SystemInfoService().get_list()
-    data = []
-    for client in client_list:
-        client = client if isinstance(client, SystemInfo) else client.uuid
-        # if client.uuid == uuid:
-        #     continue
-        data.append(
+    # 用户-地址簿
+    user_personals = user_info.user_personal.all()
+
+    # 用户组-地址簿
+    # group_personals = user_info
+
+    data = {
+        "total": len(user_personals),
+        "data": [
             {
-                "id": client.client_id,
-                "info": {
-                    "device_name": client.device_name,
-                    "os": client.os,
-                    "username": client.username,
-                },
-                "status": 1,
-                "user_name": user_info.username,
+                "guid": personal.personal.guid,
+                "name": personal.personal.personal_name,
+            } for personal in user_personals if personal.personal.personal_type != 'private'
+        ]
+    }
+
+    return JsonResponse(
+        data
+    )
+
+
+@require_http_methods(["POST"])
+@request_debug_log
+def ab_peers(request):
+    """
+    返回用户添加到地址簿的设备列表
+    :param request:
+    :return:
+    """
+    # result = {
+    #     "total": 1,
+    #     "data": [
+    #         {
+    #             # "row_id": 12,
+    #             "id": "488591401",
+    #             "username": "pcuser",
+    #             # "password": "",
+    #             "hostname": "HOST-01",
+    #             "alias": "办公PC",
+    #             "platform": "Windows",
+    #             "tags": ["重要", "外网"],
+    #             # "hash": "",
+    #             # "user_id": 3,
+    #             # "forceAlwaysRelay": False,
+    #             # "rdpPort": "",
+    #             # "rdpUsername": "",
+    #             # "online": True,
+    #             # "loginName": "pcuser",
+    #             # "sameServer": True,
+    #             # "collection_id": 5
+    #         }
+    #     ],
+    #     "licensed_devices": 99999
+    # }
+
+    token_service = TokenService(request=request)
+    request_query = token_service.request_query
+    page = int(request_query.get('current', 1))
+    page_size = int(request_query.get('pageSize', 10))
+    guid = request_query.get('ab')
+
+    personal_service = PersonalService()
+    try:
+        # 结合 select_related 一次性拉取 `peer`，避免 N+1
+        peers_qs = personal_service.get_personal(guid).personal_peer.select_related('peer').all()
+    except Exception:
+        logger.error(f'[ab_peers] get personal error: {guid}')
+        return JsonResponse(
+            {
+                "total": 0,
+                "data": []
             }
         )
+
+    # 预取 alias 和 tags，使用批量映射减少查询
+    peer_ids = [p.peer.client_id for p in peers_qs]
+    alias_map = AliasService().get_alias_map(guid=guid, peer_ids=peer_ids)
+    tags_map = TagService(guid=guid).get_tags_map(peer_ids)
+
     result = {
-        'total': len(client_list),
-        'data': data
+        "total": peers_qs.count(),
+        "data": [
+            {
+                "id": p.peer.client_id,
+                "username": p.peer.username,
+                "hostname": p.peer.device_name,
+                "alias": alias_map.get(p.peer.client_id, ""),
+                "platform": p.peer.os,
+                "tags": tags_map.get(p.peer.client_id, []),
+            } for p in peers_qs
+        ]
     }
+
     return JsonResponse(result)
+
 
 @request_debug_log
 def ab_peer_add(request, guid):
@@ -594,22 +649,45 @@ def ab_peer_add(request, guid):
             guid=guid,
             peer_id=body.get('id'),
         )
-        return JsonResponse(
-            {
-                'code': 1,
-                'data': {
-                    'status': 1,
-                    'message': 'success'
-                }
-            }
-        )
+        return HttpResponse(status=200)
     except:
         return JsonResponse(
-            {
-                'code': 1,
-                'data': {
-                    'status': 1,
-                    'message': 'success'
-                }
-            }
+            {'error': 'Add peer to personal failed'}
         )
+
+
+@require_http_methods(["PUT"])
+@request_debug_log
+@check_login
+def ab_peer_update(request, guid):
+    token_service = TokenService(request=request)
+    body = token_service.request_body
+    peer_id = body.get('id')
+    alias = body.get('alias', '')
+    tags = body.get('tags', '')
+
+    if 'alias' in body.keys():
+        AliasService().set_alias(
+            guid=guid,
+            peer_id=peer_id,
+            alias=alias
+        )
+    if 'tags' in body.keys():
+        TagService(guid=guid).set_tag_by_peer_id(
+            peer_id=peer_id,
+            tags=tags,
+        )
+    return HttpResponse(status=200)
+
+
+@require_http_methods(["DELETE"])
+@request_debug_log
+@check_login
+def ab_peer_delete(request, guid):
+    token_service = TokenService(request=request)
+    body = token_service.request_body
+    PersonalService().del_peer_to_personal(
+        guid=guid,
+        peer_id=body,
+    )
+    return HttpResponse(status=200)

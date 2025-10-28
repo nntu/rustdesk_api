@@ -1,3 +1,4 @@
+import ast
 import json
 import logging
 from datetime import timedelta
@@ -18,7 +19,7 @@ from apps.db.models import (
     Log,
     AutidConnLog,
     UserPrefile,
-    Personal,
+    Personal, Alias, ClientTags,
 )
 
 logger = logging.getLogger(__name__)
@@ -36,36 +37,6 @@ class BaseService:
 
     db: models.Model = None
 
-    def get_list(self, **kwargs):
-        """
-        通用分页查询方法
-
-        :param filters: 查询条件字典
-        :param ordering: 排序字段列表
-        :param page: 当前页码
-        :param page_size: 每页记录数
-        :return: 包含分页信息的字典
-        """
-        page = int(kwargs.pop("page", 1))
-        page_size = int(kwargs.pop("page_size", 10))
-
-        filters = kwargs.pop("filters", {})
-        queryset = self.db.objects.filter(**filters)
-
-        if ordering := kwargs.pop("ordering", []):
-            queryset = queryset.order_by(*ordering)
-
-        total = queryset.count()
-        results = queryset[(page - 1) * page_size: page * page_size]
-
-        return {
-            "results": results,
-            "total": total,
-            "page": page,
-            "page_size": page_size,
-            "total_pages": (total + page_size - 1) // page_size,
-        }
-
     @staticmethod
     def get_username(username):
         if isinstance(username, str):
@@ -73,10 +44,16 @@ class BaseService:
         return username
 
     @staticmethod
-    def get_uuid(uuid):
+    def get_peer_by_uuid(uuid):
         if isinstance(uuid, str):
             uuid = SystemInfoService().get_client_info_by_uuid(uuid)
         return uuid
+
+    @staticmethod
+    def get_peer_by_peer_id(peer_id):
+        if isinstance(peer_id, str):
+            peer_id = SystemInfoService().get_client_info_by_client_id(peer_id)
+        return peer_id
 
 
 class UserService(BaseService):
@@ -357,15 +334,14 @@ class SystemInfoService(BaseService):
         :param kwargs: 系统信息字段
         :return: (created, object)元组
         """
-        # super().create_or_update(filters={
-        #     'uuid': uuid,
-        # }, **kwargs)
-        # kwargs['uuid'] = uuid
         self.db.objects.update_or_create(uuid=uuid, defaults=kwargs)
         logger.info(f"更新设备信息: {kwargs}")
 
     def get_list(self):
-        return list(self.db.objects.all())
+        return self.db.objects.all()
+
+    def get_peers(self, *peers):
+        return self.db.objects.filter(client_id__in=peers).all()
 
 
 class HeartBeatService(BaseService):
@@ -390,19 +366,6 @@ class HeartBeatService(BaseService):
             return True
         return False
 
-    def get_list(self, page=1, page_size=10, keep_alive_timeout=60):
-        device_list = super().get_list(page=page, page_size=page_size)
-        data = [
-            {
-                device.uuid: (
-                    True
-                    if get_local_time() - device.modified_at < keep_alive_timeout
-                    else False
-                )
-            }
-            for device in device_list
-        ]
-
 
 class LoginClientService(BaseService):
     """
@@ -416,12 +379,12 @@ class LoginClientService(BaseService):
     def update_login_status(self, username, uuid, client_id):
         log = self.db.objects.update_or_create(
             username=self.get_username(username),
-            uuid=self.get_uuid(uuid),
+            uuid=self.get_peer_by_uuid(uuid),
             client_id=client_id,
             deflaults={
                 "login_status": True,
                 "username": self.get_username(username),
-                "uuid": self.get_uuid(uuid),
+                "uuid": self.get_peer_by_uuid(uuid),
                 "client_id": client_id,
             },
         )
@@ -432,12 +395,12 @@ class LoginClientService(BaseService):
     def update_logout_status(self, username, uuid, client_id):
         log = self.db.objects.update_or_create(
             username=self.get_username(username),
-            uuid=self.get_uuid(uuid),
+            uuid=self.get_peer_by_uuid(uuid),
             client_id=client_id,
             deflaults={
                 "login_status": False,
                 "username": self.get_username(username),
-                "uuid": self.get_uuid(uuid),
+                "uuid": self.get_peer_by_uuid(uuid),
                 "client_id": client_id,
             },
         )
@@ -466,7 +429,7 @@ class TokenService(BaseService):
         token = f"{get_randem_md5()}_{username}"
         self.db.objects.create(
             username=self.get_username(username),
-            uuid=self.get_uuid(uuid),
+            uuid=self.get_peer_by_uuid(uuid),
             token=token,
             created_at=get_local_time(),
             last_used_at=get_local_time(),
@@ -488,7 +451,7 @@ class TokenService(BaseService):
         return False
 
     def update_token_by_uuid(self, uuid):
-        if _token := self.db.objects.filter(uuid=self.get_uuid(uuid)).first():
+        if _token := self.db.objects.filter(uuid=self.get_peer_by_uuid(uuid)).first():
             _token.last_used_at = get_local_time()
             _token.save()
             logger.info(f"通过uuid更新令牌: {uuid} - {_token.token}")
@@ -501,7 +464,7 @@ class TokenService(BaseService):
         return res
 
     def delete_token_by_uuid(self, uuid):
-        res = self.db.objects.filter(uuid=self.get_uuid(uuid)).delete()
+        res = self.db.objects.filter(uuid=self.get_peer_by_uuid(uuid)).delete()
         logger.info(f"通过uuid删除令牌: {uuid}")
         return res
 
@@ -527,12 +490,17 @@ class TokenService(BaseService):
         return None
 
     @property
-    def request_body(self):
+    def request_body(self) -> dict | list:
         if self.request:
-            try:
-                return json.loads(self.request.body.decode())
-            except:
-                return self.request.body.decode()
+            if body := self.request.body:
+                return json.loads(body)
+        return {}
+
+    @property
+    def request_query(self):
+        if self.request:
+            if params := self.request.GET:
+                return params.dict()
         return {}
 
     def get_cur_uuid_by_token(self, token) -> str | None:
@@ -550,6 +518,7 @@ class TagService:
 
     db_tag = Tag
     db_client = SystemInfo
+    db_client_tags = ClientTags
 
     def __init__(self, guid):
         self.guid = guid
@@ -576,11 +545,75 @@ class TagService:
         """
         return self.db_tag.objects.filter(guid=self.guid).all()
 
-    def add_tag_to_client(self, tag, client_id):
-        return self.db_tag.objects.get(tag=tag, guid=self.guid).tag_to_peer.create(client_id=client_id)
+    def set_tag_by_peer_id(self, peer_id, tags):
+        """
+        为指定设备设置标签（覆盖式）。
 
-    def get_tag_client_list(self, tag):
-        return self.db_tag.objects.get(tag=tag, guid=self.guid).tag_to_peer.all()
+        :param peer_id: 设备 client_id
+        :param tags: 标签列表
+        :returns: 更新或创建的记录
+        """
+        self.db_client_tags.objects.update_or_create(peer_id=peer_id, guid=self.guid, defaults={"tags": str(tags)})
+
+    def get_tags_by_peer_id(self, peer_id) -> list[str]:
+        """
+        获取单个设备的标签列表。
+
+        :param peer_id: 设备 client_id
+        :returns: 标签字符串列表，若无记录返回空列表
+        """
+        row = self.db_client_tags.objects.filter(peer_id=peer_id, guid=self.guid).values("tags").first()
+        if not row:
+            return []
+        return self._parse_tags(row.get("tags"))
+
+    def get_tags_map(self, peer_ids: list[str]) -> dict[str, list[str]]:
+        """
+        批量获取多个设备的标签映射，避免 N+1 查询。
+
+        :param peer_ids: 设备 `client_id` 列表
+        :returns: {peer_id: [tag, ...]} 映射
+        """
+        if not peer_ids:
+            return {}
+        rows = self.db_client_tags.objects.filter(guid=self.guid, peer_id__in=peer_ids).values("peer_id", "tags")
+        result: dict[str, list[str]] = {}
+        for row in rows:
+            result[row["peer_id"]] = self._parse_tags(row.get("tags"))
+        return result
+
+    @staticmethod
+    def _parse_tags(raw) -> list[str]:
+        """
+        解析存储在数据库中的标签字段。
+
+        兼容 list 序列化为字符串的存储方式和 JSON 字符串。
+
+        :param raw: 原始存储值（字符串或列表）
+        :returns: 标签字符串列表
+        """
+        if raw is None:
+            return []
+        if isinstance(raw, list):
+            return [str(x) for x in raw]
+        s = str(raw).strip()
+        if not s:
+            return []
+        # 优先尝试 JSON
+        try:
+            val = json.loads(s)
+            if isinstance(val, list):
+                return [str(x) for x in val]
+        except Exception:
+            pass
+        # 回退到安全的字面量解析
+        try:
+            val = ast.literal_eval(s)
+            if isinstance(val, list):
+                return [str(x) for x in val]
+        except Exception:
+            pass
+        return []
 
 
 class LogService(BaseService):
@@ -605,7 +638,7 @@ class LogService(BaseService):
         """
         log = self.db.objects.create(
             username=self.get_username(username),
-            uuid=self.get_uuid(uuid),
+            uuid=self.get_peer_by_uuid(uuid),
             log_level=log_level,
             operation_type=log_type,  # 根据实际需求映射到合适的操作类型
             operation_object="log",  # 根据实际需求设置操作对象
@@ -651,8 +684,8 @@ class AuditConnService(BaseService):
         :return:
         """
         if controller_uuid:
-            controller_uuid = self.get_uuid(controller_uuid)
-        controlled_uuid = self.get_uuid(controlled_uuid)
+            controller_uuid = self.get_peer_by_uuid(controller_uuid)
+        controlled_uuid = self.get_peer_by_uuid(controlled_uuid)
 
         data = {
             "action": action,
@@ -678,8 +711,8 @@ class AuditConnService(BaseService):
             username="",
             _type=0,
     ):
-        controller_uuid = self.get_uuid(controller_uuid)
-        controlled_uuid = self.get_uuid(controlled_uuid)
+        controller_uuid = self.get_peer_by_uuid(controller_uuid)
+        controlled_uuid = self.get_peer_by_uuid(controlled_uuid)
 
         data = {
             "initiating_ip": initiating_ip,
@@ -749,3 +782,32 @@ class PersonalService(BaseService):
     def add_peer_to_personal(self, guid, peer_id):
         peer = SystemInfoService().get_client_info_by_client_id(peer_id)
         return self.get_personal(guid=guid).personal_peer.create(peer=peer)
+
+    def del_peer_to_personal(self, guid, peer_id: list | str):
+        if isinstance(peer_id, str):
+            peer_id = [peer_id]
+        peers = SystemInfoService().get_peers(*peer_id)
+        return self.get_personal(guid=guid).personal_peer.filter(peer__in=peers).delete()
+
+
+class AliasService(BaseService):
+    db = Alias
+
+    def set_alias(self, peer_id, alias, guid):
+        return self.db.objects.update_or_create(peer_id=peer_id, guid=guid, defaults={"alias": alias})
+
+    def get_alias(self, guid):
+        return self.db.objects.filter(guid=guid).all()
+
+    def get_alias_map(self, guid: str, peer_ids: list[str]) -> dict[str, str]:
+        """
+        批量获取某地址簿下多个设备的别名映射。
+
+        :param guid: 地址簿 GUID
+        :param peer_ids: 设备 `client_id` 列表
+        :returns: {peer_id: alias} 映射字典，未设置别名的设备不会出现在字典中
+        """
+        if not peer_ids:
+            return {}
+        rows = self.db.objects.filter(guid=guid, peer_id__in=peer_ids).values("peer_id", "alias")
+        return {row["peer_id"]: row["alias"] for row in rows}

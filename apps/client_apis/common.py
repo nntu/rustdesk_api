@@ -2,7 +2,7 @@ import json
 import logging
 from functools import wraps
 
-from django.http import HttpRequest, JsonResponse
+from django.http import HttpRequest, JsonResponse, HttpResponse
 
 from apps.common.utils import get_randem_md5
 from apps.db.service import TokenService, SystemInfoService
@@ -61,13 +61,16 @@ def request_debug_log(func):
             'path': request.path,
             'headers': dict(request.headers),
         }
-        if post := request.body:
-            request_log['request_body'] = json.loads(post)
-        elif post := request.POST:
-            request_log['request_post_body'] = post.dict()
+        token_service = TokenService(request=request)
+        if post := token_service.request_body:
+            request_log['request_body'] = post
+        elif get := token_service.request_query:
+            request_log['request_query'] = get
 
         logger.debug(f'[{__uuid}]request: {json.dumps(request_log)}')
         response = func(request, *args, **kwargs)
+        if response is None:
+            response = HttpResponse(status=200)
         response_data = {
             'status_code': response.status_code,
         }
@@ -76,5 +79,14 @@ def request_debug_log(func):
         response_log = json.dumps(response_data)
         logger.debug(f'[{__uuid}]response: {response_log}')
         return response
+
+    return wrapper
+
+
+def debug_request_None(func):
+    @wraps(func)
+    def wrapper(request: HttpRequest, *args, **kwargs):
+        # return func(request, *args, **kwargs)
+        return JsonResponse({'code': 1})
 
     return wrapper
