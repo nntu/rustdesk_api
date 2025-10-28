@@ -472,16 +472,12 @@ def ap_peers(request):
 @request_debug_log
 @check_login
 def ab_tags(request, guid):
-    token_service = TokenService(request=request)
-    user_info = token_service.user_info
-
-    tag_service = TagService(user_info)
+    tag_service = TagService(guid=guid)
     tags = tag_service.get_all_tags()
     data = [
         {
-            'name': tag.tag_id.tag,
-            'color': int(tag.tag_id.color),
-            'type': tag.tag_id.tag_type,
+            'name': tag.tag,
+            'color': int(tag.color),
         } for tag in tags
     ]
     return JsonResponse(data, safe=False, status=200)
@@ -491,13 +487,12 @@ def ab_tags(request, guid):
 @request_debug_log
 @check_login
 def ab_tag_add(request, guid):
-    body = json.loads(request.body)
+    token_service = TokenService(request=request)
+    body = token_service.request_body
     tag = body.get('name')
     color = body.get('color')
 
-    token_service = TokenService(request=request)
-    user_info = token_service.user_info
-    tag_service = TagService(user_info)
+    tag_service = TagService(guid=guid)
     tag_service.create_tag(tag=tag, color=color)
     return HttpResponse(status=200)
 
@@ -507,13 +502,12 @@ def ab_tag_add(request, guid):
 @check_login
 def ab_tag_rename(request, guid):
     token_service = TokenService(request=request)
-    user_info = token_service.user_info
     body = token_service.request_body
 
     tag_old = body.get('old')
     tag_new = body.get('new')
 
-    tag_service = TagService(user_info)
+    tag_service = TagService(guid=guid)
     tag_service.update_tag(tag=tag_old, new_tag=tag_new)
     return HttpResponse(status=200)
 
@@ -523,10 +517,9 @@ def ab_tag_rename(request, guid):
 @check_login
 def ab_tag(request, guid):
     token_service = TokenService(request=request)
-    user_info = token_service.user_info
     body = token_service.request_body
     tags = body
-    tag_service = TagService(user_info)
+    tag_service = TagService(guid=guid)
     tag_service.delete_tag(*list(tags))
 
     return HttpResponse(status=200)

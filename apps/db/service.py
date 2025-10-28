@@ -9,21 +9,31 @@ from django.db import transaction
 from django.http import HttpRequest
 
 from apps.common.utils import get_local_time, get_randem_md5
-from apps.db.models import HeartBeat, SystemInfo, Token, LoginClient, Tag, Log, AutidConnLog, \
-    UserPrefile, Personal
+from apps.db.models import (
+    HeartBeat,
+    SystemInfo,
+    Token,
+    LoginClient,
+    Tag,
+    Log,
+    AutidConnLog,
+    UserPrefile,
+    Personal,
+)
 
 logger = logging.getLogger(__name__)
 
 # 定义泛型类型变量，用于表示各种模型类型
-ModelType = TypeVar('ModelType', bound=models.Model)
+ModelType = TypeVar("ModelType", bound=models.Model)
 
 
 class BaseService:
     """
     数据服务基类
-    
+
     :param db: 需要操作的模型类
     """
+
     db: models.Model = None
 
     def get_list(self, **kwargs):
@@ -36,24 +46,24 @@ class BaseService:
         :param page_size: 每页记录数
         :return: 包含分页信息的字典
         """
-        page = int(kwargs.pop('page', 1))
-        page_size = int(kwargs.pop('page_size', 10))
+        page = int(kwargs.pop("page", 1))
+        page_size = int(kwargs.pop("page_size", 10))
 
-        filters = kwargs.pop('filters', {})
+        filters = kwargs.pop("filters", {})
         queryset = self.db.objects.filter(**filters)
 
-        if ordering := kwargs.pop('ordering', []):
+        if ordering := kwargs.pop("ordering", []):
             queryset = queryset.order_by(*ordering)
 
         total = queryset.count()
         results = queryset[(page - 1) * page_size: page * page_size]
 
         return {
-            'results': results,
-            'total': total,
-            'page': page,
-            'page_size': page_size,
-            'total_pages': (total + page_size - 1) // page_size
+            "results": results,
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+            "total_pages": (total + page_size - 1) // page_size,
         }
 
     @staticmethod
@@ -81,8 +91,15 @@ class UserService(BaseService):
     def get_users(self, *users):
         return self.db.objects.filter(username__in=[*users]).all()
 
-    def create_user(self, username, password, email='', is_superuser=False, is_staff=False,
-                    group: str | Group = None) -> User:
+    def create_user(
+            self,
+            username,
+            password,
+            email="",
+            is_superuser=False,
+            is_staff=False,
+            group: str | Group = None,
+    ) -> User:
         user = self.db.objects.create_user(
             username=username,
             email=email,
@@ -91,7 +108,7 @@ class UserService(BaseService):
         )
         user.set_password(password)
         user.save()
-        logger.info(f'创建用户: {user}')
+        logger.info(f"创建用户: {user}")
 
         # 添加用户到组（确保参数顺序正确）
         group_service = GroupService()
@@ -119,7 +136,7 @@ class UserService(BaseService):
             raise ValueError("Either username or email must be provided.")
         user.set_password(password)
         user.save()
-        logger.info(f'设置用户密码: {user}')
+        logger.info(f"设置用户密码: {user}")
         return user
 
     def __get_list(self, **kwargs):
@@ -132,24 +149,24 @@ class UserService(BaseService):
         :param page_size: 每页记录数
         :return: 包含分页信息的字典
         """
-        page = int(kwargs.pop('page', 1))
-        page_size = int(kwargs.pop('page_size', 10))
+        page = int(kwargs.pop("page", 1))
+        page_size = int(kwargs.pop("page_size", 10))
 
-        filters = kwargs.pop('filters', {})
+        filters = kwargs.pop("filters", {})
         queryset = self.db.objects.filter(**filters)
 
-        if ordering := kwargs.pop('ordering', []):
+        if ordering := kwargs.pop("ordering", []):
             queryset = queryset.order_by(*ordering)
 
         total = queryset.count()
         results = queryset[(page - 1) * page_size: page * page_size]
 
         return {
-            'results': results,
-            'total': total,
-            'page': page,
-            'page_size': page_size,
-            'total_pages': (total + page_size - 1) // page_size
+            "results": results,
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+            "total_pages": (total + page_size - 1) // page_size,
         }
 
     def get_list_by_status(self, status, page=1, page_size=10):
@@ -159,25 +176,33 @@ class UserService(BaseService):
         user = self.get_user_by_name(username)
         group_id = user.userprofile.group_id
         collection_id = 1 if user.is_superuser else 0
-        return f'{group_id}-{user.id}-{collection_id}'
+        return f"{group_id}-{user.id}-{collection_id}"
 
     def parse_guid(self, guid):
-        guid_list = guid.split('-')
+        guid_list = guid.split("-")
         group_id = guid_list[0]
         user_id = guid_list[1]
         collection_id = guid_list[2]
         group = GroupService().get_group_by_id(group_id)
         user = self.get_user_by_id(user_id)
-        return group, user, bool(int(collection_id))  # TODO 第三个值应该返回地址簿ID，这里需要改
+        return (
+            group,
+            user,
+            bool(int(collection_id)),
+        )  # TODO 第三个值应该返回地址簿ID，这里需要改
 
     def set_user_permissions(self, username, *permissions):
-        permissions = self.db.objects.filter(user_permissions__codename__in=[*permissions])
+        permissions = self.db.objects.filter(
+            user_permissions__codename__in=[*permissions]
+        )
         user = self.get_user_by_name(username)
         if user:
             user.user_permissions.add(*permissions)
 
     def del_user_permissions(self, username, *permissions):
-        permissions = self.db.objects.filter(user_permissions__codename__in=[*permissions])
+        permissions = self.db.objects.filter(
+            user_permissions__codename__in=[*permissions]
+        )
 
         user = self.get_user_by_name(username)
         if user:
@@ -190,7 +215,9 @@ class UserService(BaseService):
         return None
 
     def is_user_has_permission(self, username, *permissions) -> bool:
-        permissions = self.db.objects.filter(user_permissions__codename__in=[*permissions])
+        permissions = self.db.objects.filter(
+            user_permissions__codename__in=[*permissions]
+        )
         user = self.get_user_by_name(username)
         if user:
             return user.has_perm(*permissions)
@@ -204,7 +231,7 @@ class GroupService(BaseService):
     db = Group
 
     def __init__(self):
-        self.default_group_name = 'Default'
+        self.default_group_name = "Default"
 
     def get_group_by_name(self, name) -> Group:
         if isinstance(name, str):
@@ -221,7 +248,7 @@ class GroupService(BaseService):
             permissions = []
         group = self.db.objects.create(name=name)
         group.permissions.add(*permissions)
-        logger.info(f'创建用户组: {group}')
+        logger.info(f"创建用户组: {group}")
         return group
 
     def default_group(self):
@@ -284,7 +311,7 @@ class GroupService(BaseService):
                     to_create.append(UserPrefile(user=u, group=group))
 
             if to_update:
-                UserPrefile.objects.bulk_update(to_update, ['group'])
+                UserPrefile.objects.bulk_update(to_update, ["group"])
             if to_create:
                 UserPrefile.objects.bulk_create(to_create)
 
@@ -297,9 +324,7 @@ class PermissionService(BaseService):
 
     def create_permission(self, content_type_id, name, codename) -> Permission:
         return self.db.objects.create(
-            content_type_id=content_type_id,
-            name=name,
-            codename=codename
+            content_type_id=content_type_id, name=name, codename=codename
         )
 
     def get_by_content_type_id(self, content_type_id):
@@ -327,7 +352,7 @@ class SystemInfoService(BaseService):
     def update(self, uuid: str, **kwargs):
         """
         创建或更新系统信息
-        
+
         :param uuid: 设备唯一标识
         :param kwargs: 系统信息字段
         :return: (created, object)元组
@@ -337,11 +362,11 @@ class SystemInfoService(BaseService):
         # }, **kwargs)
         # kwargs['uuid'] = uuid
         self.db.objects.update_or_create(uuid=uuid, defaults=kwargs)
-        logger.info(f'更新设备信息: {kwargs}')
+        logger.info(f"更新设备信息: {kwargs}")
 
     def get_list(self, page=1, page_size=10):
         res = super().get_list(page=page, page_size=page_size)
-        logger.debug(f'SystemInfo list: {res}')
+        logger.debug(f"SystemInfo list: {res}")
         return res
 
 
@@ -356,8 +381,8 @@ class HeartBeatService(BaseService):
         :param kwargs: 需要更新的字段，如 client_id、ver 等
         :returns: (obj, created) 元组，created 为 True 表示新建
         """
-        kwargs['modified_at'] = get_local_time()
-        kwargs['timestamp'] = get_local_time()
+        kwargs["modified_at"] = get_local_time()
+        kwargs["timestamp"] = get_local_time()
         # 使用 uuid 作为查找条件，其他字段放入 defaults，避免唯一约束冲突
         return self.db.objects.update_or_create(uuid=uuid, defaults=kwargs)
 
@@ -371,8 +396,13 @@ class HeartBeatService(BaseService):
         device_list = super().get_list(page=page, page_size=page_size)
         data = [
             {
-                device.uuid: True if get_local_time() - device.modified_at < keep_alive_timeout else False
-            } for device in device_list
+                device.uuid: (
+                    True
+                    if get_local_time() - device.modified_at < keep_alive_timeout
+                    else False
+                )
+            }
+            for device in device_list
         ]
 
 
@@ -382,48 +412,39 @@ class LoginClientService(BaseService):
 
     用于处理登录客户端的相关业务逻辑
     """
+
     db = LoginClient
 
     def update_login_status(self, username, uuid, client_id):
-        # self.create_or_update(filters={
-        #     'username': self.get_username(username),
-        #     'uuid': self.get_uuid(uuid),
-        #     'client_id': client_id,
-        # }, login_status=True)
         log = self.db.objects.update_or_create(
             username=self.get_username(username),
             uuid=self.get_uuid(uuid),
             client_id=client_id,
             deflaults={
-                'login_status': True,
-                'username': self.get_username(username),
-                'uuid': self.get_uuid(uuid),
-                'client_id': client_id,
-            }
+                "login_status": True,
+                "username": self.get_username(username),
+                "uuid": self.get_uuid(uuid),
+                "client_id": client_id,
+            },
         )
 
-        logger.info(f'更新登录状态: {username} - {uuid}')
+        logger.info(f"更新登录状态: {username} - {uuid}")
         return log
 
     def update_logout_status(self, username, uuid, client_id):
-        # self.create_or_update(filters={
-        #     'username': self.get_username(username),
-        #     'uuid': self.get_uuid(uuid),
-        #     'client_id': client_id,
-        # }, login_status=False)
         log = self.db.objects.update_or_create(
             username=self.get_username(username),
             uuid=self.get_uuid(uuid),
             client_id=client_id,
             deflaults={
-                'login_status': False,
-                'username': self.get_username(username),
-                'uuid': self.get_uuid(uuid),
-                'client_id': client_id,
-            }
+                "login_status": False,
+                "username": self.get_username(username),
+                "uuid": self.get_uuid(uuid),
+                "client_id": client_id,
+            },
         )
 
-        logger.info(f'更新登出状态: {username} - {uuid}')
+        logger.info(f"更新登出状态: {username} - {uuid}")
         return log
 
     def get_login_client_list(self, username):
@@ -436,14 +457,15 @@ class TokenService(BaseService):
 
     用于处理令牌相关的业务逻辑
     """
+
     db = Token
 
     def __init__(self, request: HttpRequest | None = None):
         self.request = request
 
     def create_token(self, username, uuid):
-        username = username.username if isinstance(username, User) else username
-        token = f'{get_randem_md5()}_{username}'
+        username = self.get_username(username)
+        token = f"{get_randem_md5()}_{username}"
         self.db.objects.create(
             username=self.get_username(username),
             uuid=self.get_uuid(uuid),
@@ -492,22 +514,17 @@ class TokenService(BaseService):
         logger.info(f"通过用户名删除令牌: {username}")
         return res
 
-    # def get_user_info_by_token(self, token) -> User | None:
-    #     if username := self.query(token=token).first().username:
-    #         return UserService().get_user_by_name(username)
-    #     return None
-
     @property
     def authorization(self) -> str | None:
         if self.request:
-            return self.request.headers.get('Authorization')[7:]
+            return self.request.headers.get("Authorization")[7:]
         return None
 
     @property
     def user_info(self) -> User | None:
         if self.request:
             auth = self.authorization
-            username = auth.split('_')[-1]
+            username = auth.split("_")[-1]
             return UserService().get_user_by_name(username)
         return None
 
@@ -532,30 +549,26 @@ class TagService:
 
     用于处理标签相关的业务逻辑
     """
+
     db_tag = Tag
     db_client = SystemInfo
 
-    def __init__(self, username: User | str):
-        self.username = UserService().get_username(username)
+    def __init__(self, guid):
+        self.guid = guid
 
-    def create_tag(self, tag, color, tag_type='user'):
-        _tag, created = self.db_tag.objects.get_or_create(tag=tag, defaults={'color': color, 'tag_type': tag_type})
-        if created:
-            _tag.tag_to_user.create(username=self.username)
+    def create_tag(self, tag, color):
+        self.db_tag.objects.create(tag=tag, color=color, guid=self.guid)
 
     def delete_tag(self, *tag):
-        if self.username.is_superuser:
-            self.db_tag.objects.filter(tag__in=tag).delete()
-        else:
-            self.db_tag.objects.filter(tag__in=tag, tag_type='user').delete()
+        self.db_tag.objects.filter(tag__in=tag, guid=self.guid).delete()
 
     def update_tag(self, tag, color=None, new_tag=None):
         data = {}
         if color:
-            data['color'] = color
+            data["color"] = color
         if new_tag:
-            data['tag'] = new_tag
-        return self.db_tag.objects.filter(tag=tag, tag_type='user').update(**data)
+            data["tag"] = new_tag
+        return self.db_tag.objects.filter(tag=tag, guid=self.guid).update(**data)
 
     def get_all_tags(self):
         """
@@ -563,19 +576,13 @@ class TagService:
 
         :return: QuerySet of Tag objects associated with the current user
         """
-        user_tags = self.username.user_to_tag.all()
-        sys_tags = self.get_system_tags()
-        tags = list(user_tags) + list(sys_tags)
-        return list(set(tags))
-
-    def get_system_tags(self):
-        return self.db_tag.objects.filter(tag_type='system').all()
+        return self.db_tag.objects.filter(guid=self.guid).all()
 
     def add_tag_to_client(self, tag, client_id):
-        return self.db_tag.objects.get(tag=tag).tag_to_peer.create(client_id=client_id)
+        return self.db_tag.objects.get(tag=tag, guid=self.guid).tag_to_peer.create(client_id=client_id)
 
     def get_tag_client_list(self, tag):
-        return self.db_tag.objects.get(tag=tag).tag_to_peer.all()
+        return self.db_tag.objects.get(tag=tag, guid=self.guid).tag_to_peer.all()
 
 
 class LogService(BaseService):
@@ -584,9 +591,10 @@ class LogService(BaseService):
 
     用于处理日志相关的业务逻辑
     """
+
     db = Log
 
-    def create_log(self, username, uuid, log_type, log_level='info', log_message=''):
+    def create_log(self, username, uuid, log_type, log_level="info", log_message=""):
         """
         创建日志记录
 
@@ -602,13 +610,14 @@ class LogService(BaseService):
             uuid=self.get_uuid(uuid),
             log_level=log_level,
             operation_type=log_type,  # 根据实际需求映射到合适的操作类型
-            operation_object='log',  # 根据实际需求设置操作对象
-            operation_result='success',  # 假设日志创建总是成功的
+            operation_object="log",  # 根据实际需求设置操作对象
+            operation_result="success",  # 假设日志创建总是成功的
             operation_detail=log_message,
             operation_time=get_local_time(),
         )
         logger.info(
-            f"创建日志: 用户=\"{username}\", UUID=\"{uuid}\", 类型=\"{log_type}\", 级别=\"{log_level}\", 消息=\"{log_message}\"")
+            f'创建日志: 用户="{username}", UUID="{uuid}", 类型="{log_type}", 级别="{log_level}", 消息="{log_message}"'
+        )
         return log
 
 
@@ -618,12 +627,21 @@ class AuditConnService(BaseService):
 
     用于处理审计连接相关的业务逻辑
     """
+
     db = AutidConnLog
 
-    def get(self, conn_id, action='new') -> AutidConnLog:
+    def get(self, conn_id, action="new") -> AutidConnLog:
         return self.db.objects.filter(conn_id=conn_id, action=action).first()
 
-    def create_log(self, action, conn_id, initiating_ip, session_id, controlled_uuid, controller_uuid=None):
+    def create_log(
+            self,
+            action,
+            conn_id,
+            initiating_ip,
+            session_id,
+            controlled_uuid,
+            controller_uuid=None,
+    ):
         """
         连接日志
         :param action:
@@ -639,36 +657,45 @@ class AuditConnService(BaseService):
         controlled_uuid = self.get_uuid(controlled_uuid)
 
         data = {
-            'action': action,
-            'conn_id': conn_id,
-            'session_id': session_id,
-            'controller_uuid': controller_uuid,
-            'controlled_uuid': controlled_uuid,
-            'type': 0,
+            "action": action,
+            "conn_id": conn_id,
+            "session_id": session_id,
+            "controller_uuid": controller_uuid,
+            "controlled_uuid": controlled_uuid,
+            "type": 0,
         }
         if initiating_ip:
-            data['initiating_ip'] = initiating_ip
+            data["initiating_ip"] = initiating_ip
 
         log = self.db.objects.create(**data)
         return log
 
-    def update_log(self, conn_id, initiating_ip, session_id, controller_uuid, controlled_uuid, username='', _type=0):
+    def update_log(
+            self,
+            conn_id,
+            initiating_ip,
+            session_id,
+            controller_uuid,
+            controlled_uuid,
+            username="",
+            _type=0,
+    ):
         controller_uuid = self.get_uuid(controller_uuid)
         controlled_uuid = self.get_uuid(controlled_uuid)
 
         data = {
-            'initiating_ip': initiating_ip,
-            'session_id': session_id,
-            'controller_uuid': controller_uuid,
-            'controlled_uuid': controlled_uuid,
-            'type': _type,
+            "initiating_ip": initiating_ip,
+            "session_id": session_id,
+            "controller_uuid": controller_uuid,
+            "controlled_uuid": controlled_uuid,
+            "type": _type,
         }
         if username:
-            data['username'] = self.get_username(username)
+            data["username"] = self.get_username(username)
 
         return self.update(
             filters={
-                'conn_id': conn_id,
+                "conn_id": conn_id,
             },
             **data,
         )
@@ -677,7 +704,7 @@ class AuditConnService(BaseService):
 class PersonalService(BaseService):
     db = Personal
 
-    def create_personal(self, personal_name, create_user, personal_type='public'):
+    def create_personal(self, personal_name, create_user, personal_type="public"):
         create_user = self.get_username(create_user)
         personal = self.db.objects.create(
             personal_name=personal_name,
@@ -690,9 +717,9 @@ class PersonalService(BaseService):
     def create_self_personal(self, username):
         username = self.get_username(username)
         personal = self.db.objects.create(
-            personal_name=f'{username}_personal',
+            personal_name=f"{username}_personal",
             create_user=username,
-            personal_type='private',
+            personal_type="private",
         )
         personal.personal_user.create(user=username)
         return personal
@@ -705,7 +732,7 @@ class PersonalService(BaseService):
 
     def delete_personal(self, guid):
         personal = self.get_personal(guid=guid)
-        if personal and personal.personal_type != 'private':
+        if personal and personal.personal_type != "private":
             return personal.delete()
         return None
 
@@ -715,7 +742,11 @@ class PersonalService(BaseService):
 
     def del_personal_to_user(self, guid, username):
         username = self.get_username(username)
-        return self.get_personal(guid=guid).personal_user.filter(username=username).delete()
+        return (
+            self.get_personal(guid=guid)
+            .personal_user.filter(username=username)
+            .delete()
+        )
 
     def add_peer_to_personal(self, guid, peer_id):
         peer = SystemInfoService().get_client_info_by_client_id(peer_id)
