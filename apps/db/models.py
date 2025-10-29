@@ -253,34 +253,39 @@ class UserPersonal(models.Model):
         db_table = 'user_personal'
 
 
-class GroupPersonal(models.Model):
-    """
-    用户组与个人地址簿关系模型
-    """
-    group = models.ForeignKey(Group, to_field='id', on_delete=models.CASCADE, related_name='group_personal')
-    personal = models.ForeignKey(Personal, to_field='id', on_delete=models.CASCADE, related_name='personal_group')
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
-
-    class Meta:
-        verbose_name = '用户组与个人地址簿关系'
-        verbose_name_plural = '用户组与个人地址簿关系'
-        ordering = ['-created_at']
-        db_table = 'group_personal'
-
-
 class PeerPersonal(models.Model):
     """
-    用户组与个人地址簿关系模型
+    设备与个人地址簿关系模型
     """
     peer = models.ForeignKey(SystemInfo, to_field='id', on_delete=models.CASCADE, related_name='peer_personal')
     personal = models.ForeignKey(Personal, to_field='guid', on_delete=models.CASCADE, related_name='personal_peer')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
 
     class Meta:
-        verbose_name = '用户组与个人地址簿关系'
-        verbose_name_plural = '用户组与个人地址簿关系'
+        verbose_name = '设备与个人地址簿关系模型'
+        verbose_name_plural = '设备与个人地址簿关系模型'
         ordering = ['-created_at']
         db_table = 'peer_personal'
+
+
+class SharePersonal(models.Model):
+    """
+    分享地址簿记录
+    """
+    guid = models.CharField(max_length=50, verbose_name='guid')
+    to_share_id = models.CharField(max_length=50, verbose_name='被分享者的ID，被分享者可以是用户，也可以是用户组')
+    from_share_id = models.CharField(max_length=50, verbose_name='分享者的ID，分享者可以是用户，也可以是用户组')
+    to_share_type = models.IntegerField(verbose_name='被分享者的类型，1:用户，2:用户组',
+                                        choices=[(1, '用户'), (2, '用户组')])
+    from_share_type = models.IntegerField(verbose_name='分享者的类型，1:用户，2:用户组',
+                                          choices=[(1, '用户'), (2, '用户组')])
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
+
+    class Meta:
+        verbose_name = '分享地址簿记录'
+        verbose_name_plural = '分享地址簿记录'
+        ordering = ['-created_at']
+        db_table = 'share_personal'
 
 
 class Alias(models.Model):

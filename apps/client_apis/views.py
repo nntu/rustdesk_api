@@ -11,7 +11,7 @@ from apps.client_apis.common import check_login, request_debug_log, debug_reques
 from apps.common.utils import get_local_time
 from apps.db.models import SystemInfo
 from apps.db.service import HeartBeatService, SystemInfoService, TokenService, UserService, \
-    TagService, AuditConnService, PersonalService, AliasService
+    TagService, AuditConnService, PersonalService, AliasService, SharePersonalService
 
 logger = logging.getLogger(__name__)
 
@@ -516,39 +516,26 @@ def ab_shared_profiles(request):
     #         {
     #             "guid": "1-1001-12",
     #             "name": "研发部地址簿",
-    #         },
-    #         {
-    #             "guid": "1-1002-34",
-    #             "name": "IT支持共享",
-    #         },
-    #         {
-    #             "guid": "1-1003-56",
-    #             "name": "外包协作",
     #         }
     #     ]
     # }
     token_service = TokenService(request=request)
     user_info = token_service.user_info
 
-    # 用户-地址簿
-    user_personals = user_info.user_personal.all()
-
-    # 用户组-地址簿
-    # group_personals = user_info
+    # 用户对应的地址簿
+    personals = SharePersonalService(user_info).get_user_personals()
 
     data = {
-        "total": len(user_personals),
+        "total": len(personals),
         "data": [
             {
-                "guid": personal.personal.guid,
-                "name": personal.personal.personal_name,
-            } for personal in user_personals if personal.personal.personal_type != 'private'
+                "guid": personal.guid,
+                "name": personal.personal_name,
+            } for personal in personals if personal.personal.personal_type != 'private'
         ]
     }
 
-    return JsonResponse(
-        data
-    )
+    return JsonResponse(data)
 
 
 @require_http_methods(["POST"])

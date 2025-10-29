@@ -19,7 +19,7 @@ from apps.db.models import (
     Log,
     AutidConnLog,
     UserPrefile,
-    Personal, Alias, ClientTags,
+    Personal, Alias, ClientTags, SharePersonal,
 )
 
 logger = logging.getLogger(__name__)
@@ -811,3 +811,39 @@ class AliasService(BaseService):
             return {}
         rows = self.db.objects.filter(guid=guid, peer_id__in=peer_ids).values("peer_id", "alias")
         return {row["peer_id"]: row["alias"] for row in rows}
+
+
+class SharePersonalService(BaseService):
+    db = SharePersonal
+
+    def __init__(self, count_user: User):
+        self.user = count_user
+
+    def share_to_user(self, guid, username):
+        user = PersonalService().get_username(username)
+        return self.db.objects.create(
+            guid=guid,
+            to_share_id=user.id,
+            to_share_type=1,
+            from_share_id=self.user.id,
+            from_share_type=1,
+        )
+
+    def share_to_group(self, guid, group_name):
+        group = GroupService().get_group_by_name(group_name)
+        return self.db.objects.create(
+            guid=guid,
+            to_share_id=group.id,
+            to_share_type=2,
+            from_share_id=self.user.id,
+            from_share_type=1,
+        )
+
+    def get_user_personals(self):
+        group_id = self.user.userprofile.group_id
+        personal_ids = self.db.objects.filter(
+            to_share_id__in=(self.user.id, group_id),
+            to_share_type__in=(1, 2),
+        ).values_list("guid", flat=True)
+
+        return PersonalService.db.objects.filter(guid__in=personal_ids).all()
