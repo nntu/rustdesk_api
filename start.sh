@@ -2,8 +2,6 @@
 
 # 使用uWSGI启动Django应用
 
-source .venv/bin/activate
-
 python manage.py migrate
 
 # 检查是否已经有一个uWSGI实例在运行
