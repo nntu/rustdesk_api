@@ -21,3 +21,6 @@ db.sqlite3
 # OS
 .DS_Store
 Thumbs.db
+
+docker_build.sh
+docker-compose.yml

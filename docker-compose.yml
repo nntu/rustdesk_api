@@ -1,0 +1,20 @@
+version: "3.8"
+
+services:
+  app:
+    container_name: rustdesk_api
+    image: rustdesk_api:${VERSION:-latest}
+    # 若需本地调试或首次运行前未构建镜像，可临时改为：
+    # build: .
+    restart: unless-stopped
+    ports:
+      - "21114:21114"
+    environment:
+      - DATABASE=sqlite3
+      - TZ=Asia/Shanghai
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+    # 如果需要加载宿主机环境文件到容器，可取消下行注释（非必须）
+    # - ./.env:/app/.env:ro
+
