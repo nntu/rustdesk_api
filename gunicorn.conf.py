@@ -29,6 +29,10 @@ errorlog = GunicornConfig.errorlog
 # 捕获 worker 的 stdout/stderr 并写到 errorlog（stderr）
 capture_output = GunicornConfig.capture_output
 
+# 访问日志格式：同时记录直连 IP 与代理转发的 IP
+# %(h)s 为远端地址；%({x-forwarded-for}i)s 与 %({x-real-ip}i)s 为请求头
+access_log_format = '%(h)s %({x-forwarded-for}i)s %({x-real-ip}i)s - %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s"'
+
 def build_logconfig_dict() -> dict:
     """
     构建 Gunicorn 的日志配置字典，支持同时输出到控制台与文件。

@@ -60,6 +60,8 @@ def request_debug_log(func):
             'method': request.method,
             'path': request.path,
             'headers': dict(request.headers),
+            'client_ip': getattr(request, 'client_ip',
+                                 request.META.get('CLIENT_IP') or request.META.get('REMOTE_ADDR')),
         }
         token_service = TokenService(request=request)
         if post := token_service.request_body:
