@@ -14,22 +14,17 @@ stages:
     trigger: auto
     executor: []
     steps:
-      - step: build@python
-        name: build_python
-        displayName: Python 构建
-        pythonVersion: '3.9'
-        commands:
-          - echo ${GITEE_TAG}
-          - ''
-          - echo $GITEE_BRANCH
-          - ''
-          - echo ${GITEE_BRANCH}
-          - ''
-        artifacts:
-          - name: BUILD_ARTIFACT
-            path:
-              - ./
-        caches: []
+      - step: build@docker
+        name: build_docker
+        displayName: 镜像构建
+        type: cert
+        certificate: dcc590d0-9775-013e-14cd-46055990ae55
+        tag: rustdesk_api:$GITEE_BRANCH
+        dockerfile: ./Dockerfile
+        context: ''
+        artifacts: [ ]
+        isCache: false
+        parameter: { }
         notify: []
         strategy:
           retry: '0'
