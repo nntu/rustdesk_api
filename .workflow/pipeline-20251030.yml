@@ -15,11 +15,11 @@ stages:
     executor: []
     steps:
       - step: build@docker
-        name: build_docker
-        displayName: 镜像构建指定版本
+        name: build_docker_latest
+        displayName: 镜像构建latest版本
         type: cert
         certificate: dcc590d0-9775-013e-14cd-46055990ae55
-        tag: rustdesk_api:${GITEE_BRANCH}
+        tag: rustdesk_api:latest
         dockerfile: ./Dockerfile
         context: ''
         artifacts: []
@@ -29,11 +29,11 @@ stages:
         strategy:
           retry: '0'
       - step: build@docker
-        name: build_docker_latest
-        displayName: 镜像构建latest版本
+        name: build_docker
+        displayName: 镜像构建指定版本
         type: cert
         certificate: dcc590d0-9775-013e-14cd-46055990ae55
-        tag: rustdesk_api:latest
+        tag: rustdesk_api:${GITEE_BRANCH}
         dockerfile: ./Dockerfile
         context: ''
         artifacts: []
