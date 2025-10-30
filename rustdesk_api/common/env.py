@@ -16,7 +16,7 @@ class GunicornConfig:
 
     # 进程数（默认：CPU*2+1），线程数（默认：4）
     # workers = int(get_env("WORKERS", multiprocessing.cpu_count() * 2 + 1))
-    workers = int(get_env("WORKERS", 4))
+    workers = int(get_env("WORKERS", 2))
     threads = int(get_env("THREADS", 4))
 
     # 使用 gthread 以启用线程；如需纯同步可改为 "sync"
