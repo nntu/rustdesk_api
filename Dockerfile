@@ -1,5 +1,5 @@
 # 使用Python官方镜像作为基础镜像
-FROM python:3.13-slim
+FROM anolis-registry.cn-zhangjiakou.cr.aliyuncs.com/openanolis/python:3.11.1-8.6
 
 ENV PYTHONUNBUFFERED=1
 ENV DEBIAN_FRONTEND=noninteractive
