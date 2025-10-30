@@ -1,7 +1,7 @@
 import os
 
 from base import LOG_PATH
-from rustdesk_api.common.env import GunicornConfig
+from rustdesk_api.common.env import GunicornConfig, PublicConfig
 
 # 监听地址（可由 HOST、PORT 环境变量覆盖）
 bind = GunicornConfig.bind
@@ -114,12 +114,14 @@ def on_starting(server):
     """
     os.makedirs("logs", exist_ok=True)
     server.log.info(
-        "[gunicorn] starting with workers=%s, threads=%s, worker_class=%s, bind=%s",
+        "[gunicorn] starting with bind=%s, workers=%s, threads=%s, worker_class=%s",
         workers,
         threads,
         worker_class,
         bind,
     )
+    server.log.info(f'[gunicorn] Django debug model: {PublicConfig.DEBUG}')
+    server.log.info(f'[gunicorn] Django DB type: {PublicConfig.DB_TYPE}')
 
 
 def when_ready(server):

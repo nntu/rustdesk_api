@@ -4,11 +4,6 @@ FROM docker.1ms.run/python:3.13-slim
 ENV PYTHONUNBUFFERED=1
 ENV DEBIAN_FRONTEND=noninteractive
 
-# 安装构建依赖
-#RUN apt-get update && apt-get install -y \
-#    gcc \
-#    && rm -rf /var/lib/apt/lists/*
-
 # 复制项目代码
 COPY . /app
 WORKDIR /app
