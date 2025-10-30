@@ -40,9 +40,8 @@ def build_logconfig_dict() -> dict:
     :return: 兼容 logging.config.dictConfig 的配置字典
     :rtype: dict
     """
-    logs_dir = LOG_PATH
-    log_file = os.getenv("GUNICORN_ERROR_LOG_FILE", os.path.join(logs_dir, "gunicorn.log"))
-    access_file = os.getenv("GUNICORN_ACCESS_LOG_FILE", os.path.join(logs_dir, "gunicorn_access.log"))
+    log_file = os.getenv("GUNICORN_ERROR_LOG_FILE", os.path.join(LOG_PATH, "gunicorn.log"))
+    access_file = os.getenv("GUNICORN_ACCESS_LOG_FILE", os.path.join(LOG_PATH, "gunicorn_access.log"))
 
     return {
         "version": 1,
@@ -83,7 +82,7 @@ def build_logconfig_dict() -> dict:
         },
         "loggers": {
             # Gunicorn 自身错误日志（含应用捕获的 stderr 等）
-            "gunicorn": {
+            "gunicorn.error": {
                 "level": loglevel.upper(),
                 "handlers": ["console", "log_file"],
                 "propagate": False,
