@@ -113,11 +113,7 @@ def on_starting(server):
     """
     os.makedirs("logs", exist_ok=True)
     server.log.info(
-        "[gunicorn] starting with bind=%s, workers=%s, threads=%s, worker_class=%s",
-        workers,
-        threads,
-        worker_class,
-        bind,
+        f"[gunicorn] starting with bind={bind}, workers={workers}, threads={threads}, worker_class={worker_class}",
     )
     server.log.info(f'[gunicorn] Django debug model: {PublicConfig.DEBUG}')
     server.log.info(f'[gunicorn] Django DB type: {PublicConfig.DB_TYPE}')
