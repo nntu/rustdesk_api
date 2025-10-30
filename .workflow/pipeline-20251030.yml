@@ -1,0 +1,30 @@
+version: '1.0'
+name: pipeline-20251030
+displayName: pipeline-20251030
+triggers:
+  trigger: auto
+  push:
+    tags:
+      include:
+        - v\d\.\d\.\d
+stages:
+  - name: stage-7b412ea2
+    displayName: 构建docker
+    strategy: naturally
+    trigger: auto
+    executor: []
+    steps:
+      - step: build@docker
+        name: build_docker
+        displayName: 镜像构建
+        type: cert
+        certificate: dcc590d0-9775-013e-14cd-46055990ae55
+        tag: ${GITEE_TAG}
+        dockerfile: ./Dockerfile
+        context: ''
+        artifacts: []
+        isCache: false
+        parameter: {}
+        notify: []
+        strategy:
+          retry: '0'
