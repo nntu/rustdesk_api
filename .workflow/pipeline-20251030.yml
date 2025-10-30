@@ -5,7 +5,7 @@ triggers:
   trigger: auto
   push:
     tags:
-      - "v*"  # 只有推 tag v* 时才触发
+      - v\d\.\d\.\d
 stages:
   - name: stage-7b412ea2
     displayName: 构建docker
