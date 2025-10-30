@@ -20,6 +20,11 @@ stages:
         pythonVersion: '3.9'
         commands:
           - echo ${GITEE_TAG}
+          - ''
+          - echo $GITEE_BRANCH
+          - ''
+          - echo ${GITEE_BRANCH}
+          - ''
         artifacts:
           - name: BUILD_ARTIFACT
             path:
