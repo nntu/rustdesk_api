@@ -5,8 +5,8 @@ triggers:
   trigger: auto
   push:
     tags:
-      prefix:
-        - v
+      include:
+        - v\d+\.\d+\.\d+
 stages:
   - name: stage-7b412ea2
     displayName: 构建docker
