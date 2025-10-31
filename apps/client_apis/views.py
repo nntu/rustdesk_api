@@ -479,7 +479,9 @@ def ab_settings(request):
     )
 
 
+@require_http_methods(["POST"])
 @request_debug_log
+@check_login
 def ab_shared_profiles(request):
     # {
     #     "total": 0,
@@ -511,6 +513,7 @@ def ab_shared_profiles(request):
 
 @require_http_methods(["POST"])
 @request_debug_log
+@check_login
 def ab_peers(request):
     """
     返回用户添加到地址簿的设备列表
@@ -575,7 +578,7 @@ def ab_peers(request):
                 "username": p.peer.username,
                 "hostname": p.peer.device_name,
                 "alias": alias_map.get(p.peer.client_id, ""),
-                "platform": p.peer.os,
+                "platform": p.peer.os.split(' / ')[0].capitalize(),
                 "tags": tags_map.get(p.peer.client_id, []),
             } for p in peers_qs
         ]
@@ -584,7 +587,9 @@ def ab_peers(request):
     return JsonResponse(result)
 
 
+@require_http_methods(["POST"])
 @request_debug_log
+@check_login
 def ab_peer_add(request, guid):
     # {
     #     "id": "163052894",
