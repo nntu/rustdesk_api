@@ -15,7 +15,7 @@ import os
 from pathlib import Path
 from pathlib import Path
 
-from base import BASE_DIR
+from base import BASE_DIR, LOG_PATH
 from rustdesk_api.common.db_config import db_config
 from rustdesk_api.common.env import PublicConfig
 
@@ -124,7 +124,7 @@ LOGGING = {
         'file': {
             'level': 'DEBUG' if DEBUG else 'INFO',
             'class': 'logging.handlers.TimedRotatingFileHandler',
-            'filename': os.path.join(BASE_DIR, 'logs/rustdesk_api.log'),
+            'filename': os.path.join(LOG_PATH, 'rustdesk_api.log'),
             'encoding': 'utf8',
             'delay': True,
             'when': 'midnight',
@@ -134,7 +134,7 @@ LOGGING = {
         'request_debug_file': {
             'level': 'DEBUG',
             'class': 'logging.handlers.TimedRotatingFileHandler',
-            'filename': os.path.join(BASE_DIR, 'logs/request_debug.log'),
+            'filename': os.path.join(LOG_PATH, 'request_debug.log'),
             'encoding': 'utf8',
             'delay': True,
             'when': 'midnight',
