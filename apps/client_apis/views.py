@@ -570,6 +570,13 @@ def ab_peers(request):
     alias_map = AliasService().get_alias_map(guid=guid, peer_ids=peer_ids)
     tags_map = TagService(guid=guid).get_tags_map(peer_ids)
 
+    os_map = {
+        'windows': 'Windows',
+        'linux': 'Linux',
+        'macos': 'Mac OS',
+        'android': 'Android',
+    }
+
     result = {
         "total": peers_qs.count(),
         "data": [
@@ -578,7 +585,7 @@ def ab_peers(request):
                 "username": p.peer.username,
                 "hostname": p.peer.device_name,
                 "alias": alias_map.get(p.peer.client_id, ""),
-                "platform": p.peer.os.split(' / ')[0].capitalize(),
+                "platform": os_map[p.peer.os.split(' / ')[0]],
                 "tags": tags_map.get(p.peer.client_id, []),
             } for p in peers_qs
         ]
