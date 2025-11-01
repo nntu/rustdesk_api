@@ -1,6 +1,6 @@
 services:
   rustdesk_api:
-    container_name: rustdesk_api
+    container_name: rustdesk_api_dev
     build: .
     image: rustdesk_api:${APP_VERSION}
     restart: unless-stopped
