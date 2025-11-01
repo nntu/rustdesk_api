@@ -1,9 +1,8 @@
 services:
   rustdesk_api:
     container_name: rustdesk_api
-    image: rustdesk_api:${VERSION:-latest}
-    # 若需本地调试或首次运行前未构建镜像，可临时改为：
-    # build: .
+    build: .
+    image: rustdesk_api:${VERSION}
     restart: unless-stopped
     ports:
       - "21114:21114"
