@@ -26,7 +26,22 @@ stages:
         isCache: false
         parameter:
           APP_VERSION: ${GITEE_BRANCH}
-        notify: []
+        notify:
+          - certificate: 19b73520-9089-013d-19d6-3ee4d8100835
+            events:
+              - success
+              - fail
+              - cancel
+              - skip
+            content:
+              - repository
+              - pipeline
+              - stage
+              - task
+              - operator
+              - branch
+              - detail
+            type: dingtalk
         strategy:
           retry: '0'
           resource: '{"limits":{"cpu":"4","memory":"8"}}'
@@ -42,7 +57,22 @@ stages:
         isCache: false
         parameter:
           APP_VERSION: ${GITEE_BRANCH}
-        notify: []
+        notify:
+          - certificate: 19b73520-9089-013d-19d6-3ee4d8100835
+            events:
+              - success
+              - fail
+              - cancel
+              - skip
+            content:
+              - repository
+              - pipeline
+              - stage
+              - task
+              - operator
+              - branch
+              - detail
+            type: dingtalk
         strategy:
           retry: '0'
           resource: '{"limits":{"cpu":"4","memory":"8"}}'
