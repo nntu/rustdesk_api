@@ -8,7 +8,7 @@ def get_env(key, default=None):
 class PublicConfig:
     DB_TYPE = get_env('DATABASE', 'sqlite3')
     DEBUG = bool(get_env('DEBUG', False))
-    APP_VERSION = get_env('APP_VERSION', '')
+    APP_VERSION = get_env('VERSION', '')
 
 
 class GunicornConfig:

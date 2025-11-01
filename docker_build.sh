@@ -18,12 +18,10 @@ IMAGE_NAME="rustdesk_api"
 ###
 # 生成时间版本号
 #
-# :returns str: 按照时间生成的版本号 (格式: %Y%m%d%H%M%S)
+# :returns str: 带前缀的时间版本号 (格式: dev_%Y%m%d%H%M%S)
 ###
 generate_version() {
-  # 说明: 用户要求格式为 %Y%M%D%H%M%S，其中 %D 会产生斜杠(例如 10/31/25)，
-  # 这会导致 Docker tag 含非法字符。为保证跨平台与合法性，这里采用等价无分隔符格式: %Y%m%d%H%M%S。
-  date +%Y%m%d%H%M%S
+  echo "dev_$(date +%Y%m%d%H%M%S)"
 }
 
 ###
