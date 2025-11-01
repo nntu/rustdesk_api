@@ -2,7 +2,7 @@ services:
   rustdesk_api:
     container_name: rustdesk_api
     build: .
-    image: rustdesk_api:${VERSION}
+    image: rustdesk_api:${APP_VERSION}
     restart: unless-stopped
     ports:
       - "21114:21114"

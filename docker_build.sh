@@ -36,9 +36,9 @@ save_version_files() {
   repo_root="$(cd "$(dirname "$0")" && pwd)"
 
   # .env: 写入 VERSION=...（简单覆盖方式，若需保留其它变量可改为就地替换）
-  echo "VERSION=${version}" >"${repo_root}/.env"
+  echo "APP_VERSION=${version}" >"${repo_root}/.env"
 
-  echo "已写入版本号到: ${repo_root}/.env (VERSION=${version})"
+  echo "已写入版本号到: ${repo_root}/.env (APP_VERSION=${version})"
 }
 
 ###
