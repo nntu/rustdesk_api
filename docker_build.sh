@@ -9,7 +9,7 @@ set -euo pipefail
 #
 # 说明:
 # - 自动生成时间版本号并构建镜像: rustdesk_api:<version>
-# - 将版本号写入项目根目录 `.env` (写入 VERSION=...)
+# - 将版本号写入项目根目录 `.env` (写入 APP_VERSION=...)
 # - 兼容 macOS、Linux、Windows(WSL2) 终端环境
 # =============================
 
@@ -47,7 +47,10 @@ save_version_files() {
 build_image() {
   local version="$1"
   echo "开始构建 Docker 镜像: ${IMAGE_NAME}:${version}"
-  docker build -t "${IMAGE_NAME}:${version}" -f Dockerfile .
+  docker build \
+    --build-arg APP_VERSION="${version}" \
+    -t "${IMAGE_NAME}:${version}" \
+    -f Dockerfile .
 
   echo "构建完成 -> ${IMAGE_NAME}:${version}"
 }
@@ -59,7 +62,7 @@ build_image() {
 ###
 print_usage() {
   echo "用法: $0"
-  echo "功能: 自动生成时间版本号并构建镜像，同时更新 .env (VERSION=...)"
+  echo "功能: 自动生成时间版本号并构建镜像，同时更新 .env (APP_VERSION=...)"
 }
 
 ###
