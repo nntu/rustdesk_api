@@ -20,5 +20,4 @@ VOLUME ["/app/logs", "/app/data"]
 
 RUN chmod +x start.sh
 
-
 CMD ["./start.sh"]
