@@ -426,7 +426,20 @@ def ab_tags(request, guid):
     return JsonResponse(data, safe=False, status=200)
 
 
-@require_http_methods(["POST"])
+@require_http_methods(["DELETE"])
+@request_debug_log
+@check_login
+def ab_tag(request, guid):
+    token_service = TokenService(request=request)
+    body = token_service.request_body
+    tags = body
+    tag_service = TagService(guid=guid)
+    tag_service.delete_tag(*list(tags))
+
+    return HttpResponse(status=200)
+
+
+@require_http_methods(["POST", "PUT"])
 @request_debug_log
 @check_login
 def ab_tag_add(request, guid):
@@ -434,9 +447,12 @@ def ab_tag_add(request, guid):
     body = token_service.request_body
     tag = body.get('name')
     color = body.get('color')
-
-    tag_service = TagService(guid=guid)
-    tag_service.create_tag(tag=tag, color=color)
+    if request.method == "POST":
+        tag_service = TagService(guid=guid)
+        tag_service.create_tag(tag=tag, color=color)
+    elif request.method == "PUT":
+        tag_service = TagService(guid=guid)
+        tag_service.update_tag(tag=tag, color=color)
     return HttpResponse(status=200)
 
 
@@ -452,19 +468,6 @@ def ab_tag_rename(request, guid):
 
     tag_service = TagService(guid=guid)
     tag_service.update_tag(tag=tag_old, new_tag=tag_new)
-    return HttpResponse(status=200)
-
-
-@require_http_methods(["DELETE"])
-@request_debug_log
-@check_login
-def ab_tag(request, guid):
-    token_service = TokenService(request=request)
-    body = token_service.request_body
-    tags = body
-    tag_service = TagService(guid=guid)
-    tag_service.delete_tag(*list(tags))
-
     return HttpResponse(status=200)
 
 
