@@ -7,6 +7,7 @@ from typing import TypeVar
 from django.contrib.auth.models import User, Group, Permission
 from django.db import models
 from django.db import transaction
+from django.db.models import Q
 from django.http import HttpRequest
 
 from apps.db.models import (
@@ -315,7 +316,10 @@ class SystemInfoService(BaseService):
         :param kwargs: 系统信息字段
         :return: (created, object)元组
         """
-        if not self.db.objects.filter(uuid=uuid).update(**kwargs):
+        kwargs["uuid"] = uuid
+        client_id = kwargs.get("client_id")
+
+        if not self.db.objects.filter(Q(uuid=uuid) | Q(client_id=client_id)).update(**kwargs):
             self.db.objects.create(uuid=uuid, **kwargs)
 
         logger.info(f"更新设备信息: {kwargs}")
@@ -340,9 +344,11 @@ class HeartBeatService(BaseService):
         """
         kwargs["modified_at"] = get_local_time()
         kwargs["timestamp"] = get_local_time()
+        kwargs["uuid"] = uuid
+        client_id = kwargs.get("client_id")
 
-        if not self.db.objects.filter(uuid=uuid).update(**kwargs):
-            self.db.objects.create(uuid=uuid, **kwargs)
+        if not self.db.objects.filter(Q(uuid=uuid) | Q(client_id=client_id)).update(**kwargs):
+            self.db.objects.create(**kwargs)
 
     def is_alive(self, uuid, timeout=60):
         client = self.db.objects.filter(uuid=uuid).first()
@@ -364,7 +370,7 @@ class LoginClientService(BaseService):
     def platform(self):
         return {
             'windows': 1,
-            'mac': 2,
+            'macos': 2,
             'linux': 3,
             'android': 4,
             'ios': 5,
@@ -445,7 +451,7 @@ class TokenService(BaseService):
         token = f"{get_randem_md5()}_{username}"
         self.db.objects.create(
             username=self.get_username(username),
-            uuid=self.get_peer_by_uuid(uuid),
+            uuid=uuid,
             token=token,
             created_at=get_local_time(),
             last_used_at=get_local_time(),
@@ -467,7 +473,7 @@ class TokenService(BaseService):
         return False
 
     def update_token_by_uuid(self, uuid):
-        if _token := self.db.objects.filter(uuid=self.get_peer_by_uuid(uuid)).first():
+        if _token := self.db.objects.filter(uuid=uuid).first():
             _token.last_used_at = get_local_time()
             _token.save()
             logger.info(f"通过uuid更新令牌: {uuid} - {_token.token}")
@@ -480,7 +486,7 @@ class TokenService(BaseService):
         return res
 
     def delete_token_by_uuid(self, uuid):
-        res = self.db.objects.filter(uuid=self.get_peer_by_uuid(uuid)).delete()
+        res = self.db.objects.filter(uuid=uuid).delete()
         logger.info(f"通过uuid删除令牌: {uuid}")
         return res
 

@@ -21,6 +21,7 @@ class HeartBeat(models.Model):
         verbose_name_plural = verbose_name
         ordering = ['-modified_at']
         db_table = 'heartbeat'
+        unique_together = [['uuid', 'client_id']]
 
 
 class SystemInfo(models.Model):
@@ -43,9 +44,10 @@ class SystemInfo(models.Model):
         verbose_name_plural = verbose_name
         ordering = ['-created_at']
         db_table = 'system_info'
+        unique_together = [['uuid', 'client_id']]
 
     def __str__(self):
-        return f'{self.device_name} ({self.uuid})'
+        return f'{self.device_name}-({self.uuid})'
 
 
 class UserToSystem(models.Model):
