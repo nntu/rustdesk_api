@@ -43,7 +43,8 @@ upsert_env_var() {
 # :returns str: 带前缀的时间版本号 (格式: dev_%Y%m%d%H%M%S)
 ###
 generate_version() {
-  echo "dev_$(date +%Y%m%d%H%M%S)"
+#  echo "dev_$(date +%Y%m%d%H%M%S)"
+  echo "dev"
 }
 
 ###
