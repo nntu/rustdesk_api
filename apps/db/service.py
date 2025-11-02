@@ -383,8 +383,6 @@ class LoginClientService(BaseService):
         return _type
 
     def update_login_status(self, username, uuid, platform, client_type, client_name, client_id=None):
-        logger.info(
-            f"更新登录状态: {username} - {uuid} {username, uuid, platform, client_type, client_name, client_id}")
         if not self.db.objects.filter(username=username, uuid=uuid).update(
                 username=self.get_username(username),
                 uuid=uuid,
@@ -839,6 +837,9 @@ class PersonalService(BaseService):
         if isinstance(peer_id, str):
             peer_id = [peer_id]
         peers = SystemInfoService().get_peers(*peer_id)
+        alias_service = AliasService()
+        for peer in peers:
+            alias_service.set_alias(peer_id=peer.client_id, guid=guid, alias="")
         return self.get_personal(guid=guid).personal_peer.filter(peer__in=peers).delete()
 
 
