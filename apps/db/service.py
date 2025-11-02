@@ -607,7 +607,7 @@ class TagService:
         :returns: 更新或创建的记录
         """
         if qs := self.db_client_tags.objects.filter(peer_id=peer_id, guid=self.guid).first():
-            qs.tags = str(tags if tags else [])
+            qs.tags = str(tags if tags else '')
             return qs.save()
 
         kwargs = {
@@ -616,6 +616,9 @@ class TagService:
             "guid": self.guid,
         }
         return self.db_client_tags.objects.create(**kwargs)
+
+    def del_tag_by_peer_id(self, *peer_id):
+        return self.db_client_tags.objects.filter(peer_id__in=peer_id, guid=self.guid).delete()
 
     def get_tags_by_peer_id(self, peer_id) -> list[str]:
         """
@@ -837,9 +840,15 @@ class PersonalService(BaseService):
         if isinstance(peer_id, str):
             peer_id = [peer_id]
         peers = SystemInfoService().get_peers(*peer_id)
+
+        # 清掉alias
         alias_service = AliasService()
         for peer in peers:
             alias_service.set_alias(peer_id=peer.client_id, guid=guid, alias="")
+
+        # 清掉tag
+        tag_service = TagService(guid=guid)
+        tag_service.del_tag_by_peer_id(*peer_id)
         return self.get_personal(guid=guid).personal_peer.filter(peer__in=peers).delete()
 
 
