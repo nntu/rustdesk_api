@@ -559,7 +559,7 @@ class TagService:
 
     def create_tag(self, tag, color):
         res = self.db_tag.objects.create(tag=tag, color=color, guid=self.guid)
-        logger.info(f"创建标签: {self.guid}-{tag}-{color}")
+        logger.info(f"创建标签: {self.guid} - {tag} - {color}")
         return res
 
     def delete_tag(self, *tag):
@@ -589,7 +589,7 @@ class TagService:
 
         if changed_instances:
             self.db_client_tags.objects.bulk_update(changed_instances, ["tags"])
-            logger.info(f"删除标签: {self.guid}-{tags_to_delete}")
+            logger.info(f"删除标签: {self.guid} - {tags_to_delete}")
 
     def update_tag(self, tag, color=None, new_tag=None):
         data = {}
@@ -598,7 +598,7 @@ class TagService:
         if new_tag:
             data["tag"] = new_tag
         res = self.db_tag.objects.filter(tag=tag, guid=self.guid).update(**data)
-        logger.info(f"更新标签: {self.guid}-{data}")
+        logger.info(f"更新标签: {self.guid} - {data}")
         return res
 
     def get_all_tags(self):
@@ -635,16 +635,16 @@ class TagService:
 
         kwargs = {
             "peer_id": peer_id,
-            "tags": str(tags),
+            "tags": str(tag_list),
             "guid": self.guid,
         }
         res = self.db_client_tags.objects.create(**kwargs)
-        logger.info(f"设置标签: {self.guid}-{peer_id}-{tag_list if tag_list else []}")
+        logger.info(f"设置标签: {self.guid} - {peer_id} - {tag_list if tag_list else []}")
         return res
 
     def del_tag_by_peer_id(self, *peer_id):
         res = self.db_client_tags.objects.filter(peer_id__in=peer_id, guid=self.guid).delete()
-        logger.info(f"删除标签: {self.guid}-{peer_id}")
+        logger.info(f"删除标签: {self.guid} - {peer_id}")
         return res
 
     def get_tags_by_peer_id(self, peer_id) -> list[str]:
@@ -846,7 +846,7 @@ class PersonalService(BaseService):
     def delete_personal(self, guid):
         personal = self.get_personal(guid=guid)
         if personal and personal.personal_type != "private":
-            logger.info(f'删除地址簿: {personal.personal_name}-{personal.personal_name}')
+            logger.info(f'删除地址簿: {personal.personal_name} - {personal.personal_name}')
             return personal.delete()
         logger.info(f'无地址簿信息: {guid}')
         return None
@@ -854,7 +854,7 @@ class PersonalService(BaseService):
     def add_personal_to_user(self, guid, username):
         user = self.get_username(username)
         res = self.get_personal(guid=guid).personal_user.create(username=user)
-        logger.info(f'分享地址簿给用户: {guid}-{username}')
+        logger.info(f'分享地址簿给用户: {guid} - {username}')
         return res
 
     def del_personal_to_user(self, guid, username):
