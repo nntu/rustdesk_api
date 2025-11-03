@@ -1,5 +1,7 @@
 import os
 
+from gunicorn.glogging import Logger as GunicornLogger
+
 from base import LOG_PATH
 from common.env import GunicornConfig, PublicConfig
 from common.logging_config import build_gunicorn_logging
@@ -32,7 +34,42 @@ capture_output = GunicornConfig.capture_output
 
 # 访问日志格式：同时记录直连 IP 与代理转发的 IP
 # %(h)s 为远端地址；%({x-forwarded-for}i)s 与 %({x-real-ip}i)s 为请求头
-access_log_format = '%(h)s %({x-forwarded-for}i)s %({x-real-ip}i)s - %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s"'
+access_log_format = '%(h)s %({x-forwarded-for}i)s %({x-real-ip}i)s - %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s" rt=%(L4)ss'
+
+
+class CustomGunicornLogger(GunicornLogger):
+    """
+    自定义 Gunicorn Logger，扩展访问日志原子。
+
+    - 新增原子 ``L4``：以秒为单位的响应时间，保留 4 位小数（字符串）。
+    """
+
+    def atoms(self, resp, req, environ, request_time) -> dict:
+        """
+        扩展原子字典，增加 ``L4``。
+
+        :param resp: 响应对象
+        :param req: 请求对象
+        :param environ: WSGI 环境字典
+        :param request_time: 请求耗时（秒，float）
+        :return: 包含新增 ``L4`` 的原子映射
+        :rtype: dict
+        """
+        atoms = super().atoms(resp, req, environ, request_time)
+        try:
+            rt = float(request_time)
+        except Exception:
+            try:
+                rt = float(atoms.get('L', 0.0))
+            except Exception:
+                rt = 0.0
+        atoms['L4'] = f"{rt:.4f}"
+        return atoms
+
+
+# 使用自定义 logger
+logger_class = CustomGunicornLogger
+
 
 def build_logconfig_dict() -> dict:
     """
