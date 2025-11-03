@@ -1,5 +1,6 @@
 import json
 import logging
+import time
 import traceback
 from functools import wraps
 
@@ -70,6 +71,8 @@ def request_debug_log(func):
             request_log['request_query'] = get
 
         logger.debug(f'[{__uuid}]request: {json.dumps(request_log)}')
+
+        start = time.time()
         try:
             response = func(request, *args, **kwargs)
         except Exception:
@@ -83,7 +86,7 @@ def request_debug_log(func):
         if response.content:
             response_data['response_body'] = json.loads(response.content)
         response_log = json.dumps(response_data)
-        logger.debug(f'[{__uuid}]response: {response_log}')
+        logger.debug(f'[{__uuid}]response: {response_log}, use_time: {round(time.time() - start, 4)} s')
         return response
 
     return wrapper
