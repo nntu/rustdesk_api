@@ -19,7 +19,7 @@ class GunicornConfig:
     # 监听地址（可由 HOST、PORT 环境变量覆盖）
     bind = f"{os.getenv('HOST', '0.0.0.0')}:{os.getenv('PORT', '21114')}"
 
-    # 进程数（默认：CPU*2+1），线程数（默认：4）
+    # 进程数，线程数，默认 2 * 4
     # workers = int(get_env("WORKERS", multiprocessing.cpu_count() * 2 + 1))
     workers = int(get_env("WORKERS", 2))
     threads = int(get_env("THREADS", 4))
