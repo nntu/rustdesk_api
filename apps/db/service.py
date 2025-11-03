@@ -671,7 +671,8 @@ class TagService:
         rows = self.db_client_tags.objects.filter(guid=self.guid, peer_id__in=peer_ids).values("peer_id", "tags")
         result: dict[str, list[str]] = {}
         for row in rows:
-            tags_qs = self.get_tags_by_id(*eval(row.get("tags")))
+            tags = eval(row.get("tags") or '[]')
+            tags_qs = self.get_tags_by_id(*tags)
             result[row["peer_id"]] = [str(tag.tag) for tag in tags_qs]
         return result
 
