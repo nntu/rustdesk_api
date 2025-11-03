@@ -18,6 +18,7 @@ from pathlib import Path
 from base import BASE_DIR, LOG_PATH
 from common.db_config import db_config
 from common.env import PublicConfig
+from common.logging_config import build_django_logging
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -108,74 +109,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'verbose': {
-            'format': '{asctime} {module} {process:d} {thread:d} {levelname} {message}',
-            'style': '{',
-        },
-        'simple': {
-            'format': '{levelname} {message}',
-            'style': '{',
-        },
-    },
-    'handlers': {
-        'file': {
-            'level': 'DEBUG' if DEBUG else 'INFO',
-            'class': 'logging.handlers.TimedRotatingFileHandler',
-            'filename': os.path.join(LOG_PATH, 'rustdesk_api.log'),
-            'encoding': 'utf8',
-            'delay': True,
-            'when': 'midnight',
-            'backupCount': 7,
-            'formatter': 'verbose',
-        },
-        'request_debug_file': {
-            'level': 'DEBUG',
-            'class': 'logging.handlers.TimedRotatingFileHandler',
-            'filename': os.path.join(LOG_PATH, 'request_debug.log'),
-            'encoding': 'utf8',
-            'delay': True,
-            'when': 'midnight',
-            'backupCount': 7,
-            'formatter': 'verbose',
-        },
-        'console': {
-            'level': 'INFO',
-            'class': 'logging.StreamHandler',
-            'formatter': 'verbose' if DEBUG else 'simple',
-        },
-    },
-    'filters': {
-        'require_debug_true': {
-            '()': 'django.utils.log.RequireDebugTrue',
-        }
-    },
-    'loggers': {
-        '': {  # 根logger捕获所有
-            'handlers': ['file', 'console'],
-            'level': 'DEBUG' if DEBUG else 'INFO',
-            'propagate': False,
-        },
-        'django': {
-            'handlers': ['file', 'console'],
-            'level': 'INFO',
-            'propagate': True,
-        },
-        'custom': {
-            'handlers': ['file', 'console'],
-            'level': 'INFO',
-            'propagate': False,
-        },
-        'request_debug_log': {
-            'handlers': ['request_debug_file'],
-            'level': 'DEBUG',
-            'propagate': False,
-        },
-    },
-}
+LOGGING = build_django_logging(DEBUG, LOG_PATH)
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/

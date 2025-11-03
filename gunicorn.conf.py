@@ -2,6 +2,7 @@ import os
 
 from base import LOG_PATH
 from common.env import GunicornConfig, PublicConfig
+from common.logging_config import build_gunicorn_logging
 
 # 监听地址（可由 HOST、PORT 环境变量覆盖）
 bind = GunicornConfig.bind
@@ -40,61 +41,20 @@ def build_logconfig_dict() -> dict:
     :return: 兼容 logging.config.dictConfig 的配置字典
     :rtype: dict
     """
-    log_file = os.getenv("GUNICORN_ERROR_LOG_FILE", os.path.join(LOG_PATH, "gunicorn.log"))
-    access_file = os.getenv("GUNICORN_ACCESS_LOG_FILE", os.path.join(LOG_PATH, "gunicorn_access.log"))
+    error_filename = os.getenv("GUNICORN_ERROR_LOG_FILE", os.path.join(LOG_PATH, "gunicorn.log"))
+    access_filename = os.getenv("GUNICORN_ACCESS_LOG_FILE", os.path.join(LOG_PATH, "gunicorn_access.log"))
+    # 兼容旧环境变量（若传入的是完整路径则直接使用；否则使用文件名拼接 LOG_PATH）
+    if os.path.isabs(error_filename):
+        err_path = error_filename
+    else:
+        err_path = os.path.join(LOG_PATH, os.path.basename(error_filename))
+    if os.path.isabs(access_filename):
+        acc_path = access_filename
+    else:
+        acc_path = os.path.join(LOG_PATH, os.path.basename(access_filename))
 
-    return {
-        "version": 1,
-        "disable_existing_loggers": False,
-        "formatters": {
-            "generic": {
-                "format": "%(asctime)s [%(process)d] [%(levelname)s] %(name)s: %(message)s",
-                "datefmt": "%Y-%m-%d %H:%M:%S",
-            },
-            "access": {
-                "format": "%(message)s",
-            },
-        },
-        "handlers": {
-            "console": {
-                "class": "logging.StreamHandler",
-                "formatter": "generic",
-                "stream": "ext://sys.stdout",
-            },
-            "log_file": {
-                "class": "logging.handlers.TimedRotatingFileHandler",
-                "formatter": "generic",
-                "filename": log_file,
-                "encoding": "utf8",
-                "when": "midnight",
-                "backupCount": 7,
-                "delay": True,
-            },
-            "access_file": {
-                "class": "logging.handlers.TimedRotatingFileHandler",
-                "formatter": "access",
-                "filename": access_file,
-                "encoding": "utf8",
-                "when": "midnight",
-                "backupCount": 7,
-                "delay": True,
-            },
-        },
-        "loggers": {
-            # Gunicorn 自身错误日志（含应用捕获的 stderr 等）
-            "gunicorn.error": {
-                "level": loglevel.upper(),
-                "handlers": ["console", "log_file"],
-                "propagate": False,
-            },
-            # Gunicorn 访问日志
-            "gunicorn.access": {
-                "level": "INFO",
-                "handlers": ["console", "access_file"],
-                "propagate": False,
-            },
-        },
-    }
+    return build_gunicorn_logging(GunicornConfig.loglevel, LOG_PATH, os.path.basename(err_path),
+                                  os.path.basename(acc_path))
 
 
 # 将上面的日志配置应用到 Gunicorn
