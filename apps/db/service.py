@@ -630,7 +630,7 @@ class TagService:
             tag_list.append(tag.id)
 
         if qs := self.db_client_tags.objects.filter(peer_id=peer_id, guid=self.guid).first():
-            qs.tags = str(tag_list if tag_list else '')
+            qs.tags = str(tag_list if tag_list else '[]')
             return qs.save()
 
         kwargs = {
@@ -639,7 +639,7 @@ class TagService:
             "guid": self.guid,
         }
         res = self.db_client_tags.objects.create(**kwargs)
-        logger.info(f"设置标签: {self.guid}-{peer_id}-{tag_list if tag_list else None}")
+        logger.info(f"设置标签: {self.guid}-{peer_id}-{tag_list if tag_list else []}")
         return res
 
     def del_tag_by_peer_id(self, *peer_id):
