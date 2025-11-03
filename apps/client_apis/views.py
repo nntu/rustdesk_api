@@ -334,9 +334,6 @@ def device_group_accessible(request):
     :param request:
     :return:
     """
-    page = int(request.GET.get('current', 1))
-    page_size = int(request.GET.get('pageSize', 10))
-
     token_service = TokenService(request=request)
     user_info = token_service.user_info
 
