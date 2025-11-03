@@ -5,7 +5,7 @@ set -euo pipefail
 mkdir -p ./logs ./data
 
 # 数据库迁移
-python manage.py makemigrations
+#python manage.py makemigrations
 python manage.py migrate
 
 exec gunicorn rustdesk_api.wsgi:application \

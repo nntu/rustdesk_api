@@ -74,7 +74,7 @@ GET /api/client/current_user
 ## 数据库模型
 
 - `HeartBeat`：记录客户端的心跳信息。
-- `SystemInfo`：存储客户端的系统信息。
+- `PeerInfo`：存储客户端的系统信息。
 - `Tag`：设备标签，用于设备分组。
 - `Token`：用户 Token，用于身份验证。
 - `Log`：记录客户端操作日志。
@@ -84,7 +84,7 @@ GET /api/client/current_user
 ## 服务接口
 
 - `UserService`：用户管理服务，提供用户注册、查询、密码修改等功能。
-- `SystemInfoService`：系统信息服务，提供客户端信息查询和更新功能。
+- `PeerInfoService`：系统信息服务，提供客户端信息查询和更新功能。
 - `HeartBeatService`：心跳服务，用于检测客户端是否在线。
 - `TokenService`：Token 管理服务，用于生成和验证用户 Token。
 - `TagService`：标签服务，用于管理设备标签。

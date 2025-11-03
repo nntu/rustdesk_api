@@ -8,8 +8,8 @@ from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
 from apps.client_apis.common import check_login, request_debug_log, debug_request_None
-from apps.db.models import SystemInfo
-from apps.db.service import HeartBeatService, SystemInfoService, TokenService, UserService, \
+from apps.db.models import PeerInfo
+from apps.db.service import HeartBeatService, PeerInfoService, TokenService, UserService, \
     TagService, AuditConnService, PersonalService, AliasService, SharePersonalService, LoginClientService
 from common.utils import get_local_time
 
@@ -39,13 +39,13 @@ def time_test(request: HttpRequest):
 def heartbeat(request: HttpRequest):
     request_data = json.loads(request.body.decode('utf-8'))
     uuid = request_data.get('uuid')
-    client_id = request_data.get('id')
+    peer_id = request_data.get('id')
     modified_at = request_data.get('modified_at', get_local_time())
     ver = request_data.get('ver')
 
     HeartBeatService().update(
         uuid=uuid,
-        client_id=client_id,
+        peer_id=peer_id,
         modified_at=modified_at,
         ver=ver,
     )
@@ -59,9 +59,9 @@ def sysinfo(request: HttpRequest):
     uuid = body.get('uuid')
 
     # 先更新设备信息
-    SystemInfoService().update(
+    PeerInfoService().update(
         uuid=uuid,
-        client_id=body.get('id'),
+        peer_id=body.get('id'),
         cpu=body.get('cpu'),
         device_name=body.get('hostname'),
         memory=body.get('memory'),
@@ -109,7 +109,7 @@ def login(request: HttpRequest):
     LoginClientService().update_login_status(
         uuid=uuid,
         username=user,
-        client_id=body.get('id'),
+        peer_id=body.get('id'),
         client_name=client_name,
         platform=platform,
         client_type=client_type,
@@ -150,7 +150,7 @@ def logout(request: HttpRequest):
     LoginClientService().update_logout_status(
         uuid=uuid,
         username=user_info,
-        client_id=body.get('id'),
+        peer_id=body.get('id'),
     )
     #
     # LogService().create_log(
@@ -303,14 +303,14 @@ def peers(request: HttpRequest):
     user_info = token_service.user_info
     uuid = token_service.get_cur_uuid_by_token(token)
 
-    client_list = SystemInfoService().get_list()
+    client_list = PeerInfoService().get_list()
     data = []
     for client in client_list:
         if client.uuid == uuid:
             continue
         data.append(
             {
-                "id": client.client_id,
+                "id": client.peer_id,
                 "info": {
                     "device_name": client.device_name,
                     "os": client.os,
@@ -343,15 +343,15 @@ def device_group_accessible(request):
     token_service = TokenService(request=request)
     user_info = token_service.user_info
 
-    client_list = SystemInfoService().get_list()
+    client_list = PeerInfoService().get_list()
     data = []
     for client in client_list:
-        client = client if isinstance(client, SystemInfo) else client.uuid
+        client = client if isinstance(client, PeerInfo) else client.uuid
         # if client.uuid == uuid:
         #     continue
         data.append(
             {
-                "id": client.client_id,
+                "id": client.peer_id,
                 "info": {
                     "device_name": client.device_name,
                     "os": client.os,
@@ -576,7 +576,7 @@ def ab_peers(request):
         )
 
     # 预取 alias 和 tags，使用批量映射减少查询
-    peer_ids = [p.peer.client_id for p in peers_qs]
+    peer_ids = [p.peer.peer_id for p in peers_qs]
     alias_map = AliasService().get_alias_map(guid=guid, peer_ids=peer_ids)
     tags_map = TagService(guid=guid).get_tags_map(peer_ids)
 
@@ -591,12 +591,12 @@ def ab_peers(request):
         "total": peers_qs.count(),
         "data": [
             {
-                "id": p.peer.client_id,
+                "id": p.peer.peer_id,
                 "username": p.peer.username,
                 "hostname": p.peer.device_name,
-                "alias": alias_map.get(p.peer.client_id, ""),
+                "alias": alias_map.get(p.peer.peer_id, ""),
                 "platform": os_map[p.peer.os.split(' / ')[0]],
-                "tags": tags_map.get(p.peer.client_id, []),
+                "tags": tags_map.get(p.peer.peer_id, []),
             } for p in peers_qs
         ]
     }

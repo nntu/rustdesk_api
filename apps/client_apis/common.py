@@ -5,7 +5,7 @@ from functools import wraps
 
 from django.http import HttpRequest, JsonResponse, HttpResponse
 
-from apps.db.service import TokenService, SystemInfoService
+from apps.db.service import TokenService, PeerInfoService
 from common.utils import get_randem_md5
 
 logger = logging.getLogger('request_debug_log')
@@ -30,14 +30,14 @@ def check_login(func):
         body = token_service.request_body
         uuid = token_service.get_cur_uuid_by_token(token)
 
-        system_info = SystemInfoService()
-        client_info = system_info.get_client_info_by_uuid(uuid)
+        system_info = PeerInfoService()
+        client_info = system_info.get_peer_info_by_uuid(uuid)
         if not token_service.check_token(token, timeout=3600):
             # Server端记录登录信息
             # LoginClientService().update_logout_status(
             #     uuid=uuid,
             #     username=user_info.username,
-            #     client_id=client_info.client_id,
+            #     peer_id=client_info.peer_id,
             # )
             return JsonResponse({'error': 'Invalid token'}, status=401)
         token_service.update_token(token)

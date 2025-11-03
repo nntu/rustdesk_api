@@ -12,7 +12,7 @@ from django.http import HttpRequest
 
 from apps.db.models import (
     HeartBeat,
-    SystemInfo,
+    PeerInfo,
     Token,
     LoginClient,
     Tag,
@@ -47,13 +47,13 @@ class BaseService:
     @staticmethod
     def get_peer_by_uuid(uuid):
         if isinstance(uuid, str):
-            uuid = SystemInfoService().get_client_info_by_uuid(uuid)
+            uuid = PeerInfoService().get_peer_info_by_uuid(uuid)
         return uuid
 
     @staticmethod
     def get_peer_by_peer_id(peer_id):
         if isinstance(peer_id, str):
-            peer_id = SystemInfoService().get_client_info_by_client_id(peer_id)
+            peer_id = PeerInfoService().get_peer_info_by_peer_id(peer_id)
         return peer_id
 
 
@@ -299,14 +299,14 @@ class PermissionService(BaseService):
         return self.db.objects.filter(name__in=permission_name).all()
 
 
-class SystemInfoService(BaseService):
-    db = SystemInfo
+class PeerInfoService(BaseService):
+    db = PeerInfo
 
-    def get_client_info_by_uuid(self, uuid):
+    def get_peer_info_by_uuid(self, uuid):
         return self.db.objects.filter(uuid=uuid).first()
 
-    def get_client_info_by_client_id(self, client_id):
-        return self.db.objects.filter(client_id=client_id).first()
+    def get_peer_info_by_peer_id(self, peer_id):
+        return self.db.objects.filter(peer_id=peer_id).first()
 
     def update(self, uuid: str, **kwargs):
         """
@@ -317,9 +317,9 @@ class SystemInfoService(BaseService):
         :return: (created, object)元组
         """
         kwargs["uuid"] = uuid
-        client_id = kwargs.get("client_id")
+        peer_id = kwargs.get("peer_id")
 
-        if not self.db.objects.filter(Q(uuid=uuid) | Q(client_id=client_id)).update(**kwargs):
+        if not self.db.objects.filter(Q(uuid=uuid) | Q(peer_id=peer_id)).update(**kwargs):
             self.db.objects.create(**kwargs)
 
         logger.info(f"更新设备信息: {kwargs}")
@@ -328,7 +328,7 @@ class SystemInfoService(BaseService):
         return self.db.objects.all()
 
     def get_peers(self, *peers):
-        return self.db.objects.filter(client_id__in=peers).all()
+        return self.db.objects.filter(peer_id__in=peers).all()
 
 
 class HeartBeatService(BaseService):
@@ -339,15 +339,15 @@ class HeartBeatService(BaseService):
         更新或创建心跳记录
 
         :param uuid: 设备UUID
-        :param kwargs: 需要更新的字段，如 client_id、ver 等
+        :param kwargs: 需要更新的字段，如 peer_id、ver 等
         :returns:
         """
         kwargs["modified_at"] = get_local_time()
         kwargs["timestamp"] = get_local_time()
         kwargs["uuid"] = uuid
-        client_id = kwargs.get("client_id")
+        peer_id = kwargs.get("peer_id")
 
-        if not self.db.objects.filter(Q(uuid=uuid) | Q(client_id=client_id)).update(**kwargs):
+        if not self.db.objects.filter(Q(uuid=uuid) | Q(peer_id=peer_id)).update(**kwargs):
             self.db.objects.create(**kwargs)
 
     def is_alive(self, uuid, timeout=60):
@@ -382,11 +382,11 @@ class LoginClientService(BaseService):
         _type = 1 if client_type.lower() == 'web' else 2
         return _type
 
-    def update_login_status(self, username, uuid, platform, client_type, client_name, client_id=None):
+    def update_login_status(self, username, uuid, platform, client_type, client_name, peer_id=None):
         if not self.db.objects.filter(username=username, uuid=uuid).update(
                 username=self.get_username(username),
                 uuid=uuid,
-                client_id=client_id,
+                peer_id=peer_id,
                 login_status=True,
                 client_type=self.client_type(client_type),
                 platform=self.platform[platform],
@@ -395,7 +395,7 @@ class LoginClientService(BaseService):
             self.db.objects.create(
                 username=self.get_username(username),
                 uuid=uuid,
-                client_id=client_id,
+                peer_id=peer_id,
                 login_status=True,
                 client_type=client_type,
                 platform=platform,
@@ -404,11 +404,11 @@ class LoginClientService(BaseService):
 
         logger.info(f"更新登录状态: {username} - {uuid}")
 
-    def update_logout_status(self, username, uuid, client_id=None):
+    def update_logout_status(self, username, uuid, peer_id=None):
         if not self.db.objects.filter(username=username, uuid=uuid).update(
                 username=self.get_username(username),
                 uuid=uuid,
-                client_id=client_id,
+                peer_id=peer_id,
                 login_status=False,
         ):
             login_sq = self.db.objects.filter(
@@ -419,7 +419,7 @@ class LoginClientService(BaseService):
             self.db.objects.create(
                 username=self.get_username(username),
                 uuid=uuid,
-                client_id=client_id,
+                peer_id=peer_id,
                 login_status=False,
                 client_type=login_sq.client_type,
                 platform=login_sq.platform,
@@ -537,7 +537,7 @@ class TagService:
     """
 
     db_tag = Tag
-    db_client = SystemInfo
+    db_client = PeerInfo
     db_client_tags = ClientTags
 
     def __init__(self, guid):
@@ -602,7 +602,7 @@ class TagService:
         """
         为指定设备设置标签（覆盖式）。
 
-        :param peer_id: 设备 client_id
+        :param peer_id: 设备 peer_id
         :param tags: 标签列表
         :returns: 更新或创建的记录
         """
@@ -624,7 +624,7 @@ class TagService:
         """
         获取单个设备的标签列表。
 
-        :param peer_id: 设备 client_id
+        :param peer_id: 设备 peer_id
         :returns: 标签字符串列表，若无记录返回空列表
         """
         row = self.db_client_tags.objects.filter(peer_id=peer_id, guid=self.guid).values("tags").first()
@@ -636,7 +636,7 @@ class TagService:
         """
         批量获取多个设备的标签映射，避免 N+1 查询。
 
-        :param peer_ids: 设备 `client_id` 列表
+        :param peer_ids: 设备 `peer_id` 列表
         :returns: {peer_id: [tag, ...]} 映射
         """
         if not peer_ids:
@@ -833,18 +833,18 @@ class PersonalService(BaseService):
         )
 
     def add_peer_to_personal(self, guid, peer_id):
-        peer = SystemInfoService().get_client_info_by_client_id(peer_id)
+        peer = PeerInfoService().get_peer_info_by_peer_id(peer_id)
         return self.get_personal(guid=guid).personal_peer.create(peer=peer)
 
     def del_peer_to_personal(self, guid, peer_id: list | str):
         if isinstance(peer_id, str):
             peer_id = [peer_id]
-        peers = SystemInfoService().get_peers(*peer_id)
+        peers = PeerInfoService().get_peers(*peer_id)
 
         # 清掉alias
         alias_service = AliasService()
         for peer in peers:
-            alias_service.set_alias(peer_id=peer.client_id, guid=guid, alias="")
+            alias_service.set_alias(peer_id=peer.peer_id, guid=guid, alias="")
 
         # 清掉tag
         tag_service = TagService(guid=guid)
@@ -859,7 +859,7 @@ class AliasService(BaseService):
         """
         设置或更新某地址簿下设备的别名。
 
-        :param str peer_id: 设备的 `client_id`
+        :param str peer_id: 设备的 `peer_id`
         :param str alias: 要设置的别名
         :param str guid: 地址簿 GUID
         :returns: None
@@ -883,7 +883,7 @@ class AliasService(BaseService):
         批量获取某地址簿下多个设备的别名映射。
 
         :param guid: 地址簿 GUID
-        :param peer_ids: 设备 `client_id` 列表
+        :param peer_ids: 设备 `peer_id` 列表
         :returns: {peer_id: alias} 映射字典，未设置别名的设备不会出现在字典中
         """
         if not peer_ids:
