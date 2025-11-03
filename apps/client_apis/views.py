@@ -295,19 +295,16 @@ def peers(request: HttpRequest):
     :return:
     """
     # TODO 这里有一个问题，这里需要按照用户展示设备信息，当前只展示登录用户的信息
-    page = int(request.GET.get('current', 1))
-    page_size = int(request.GET.get('pageSize', 10))
 
     token_service = TokenService(request=request)
-    token = token_service.authorization
     user_info = token_service.user_info
-    uuid = token_service.get_cur_uuid_by_token(token)
+    # uuid = token_service.get_cur_uuid_by_token(token)
 
     client_list = PeerInfoService().get_list()
     data = []
     for client in client_list:
-        if client.uuid == uuid:
-            continue
+        # if client.uuid == uuid:
+        #     continue
         data.append(
             {
                 "id": client.peer_id,
@@ -579,6 +576,7 @@ def ab_peers(request):
     peer_ids = [p.peer.peer_id for p in peers_qs]
     alias_map = AliasService().get_alias_map(guid=guid, peer_ids=peer_ids)
     tags_map = TagService(guid=guid).get_tags_map(peer_ids)
+    print(tags_map)
 
     os_map = {
         'windows': 'Windows',

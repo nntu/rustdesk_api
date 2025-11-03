@@ -543,6 +543,12 @@ class TagService:
     def __init__(self, guid):
         self.guid = guid
 
+    def get_tags_by_name(self, *tag_name):
+        return self.db_tag.objects.filter(tag__in=tag_name, guid=self.guid).all()
+
+    def get_tags_by_id(self, *tag_id):
+        return self.db_tag.objects.filter(id__in=tag_id, guid=self.guid).all()
+
     def create_tag(self, tag, color):
         self.db_tag.objects.create(tag=tag, color=color, guid=self.guid)
 
@@ -606,8 +612,12 @@ class TagService:
         :param tags: 标签列表
         :returns: 更新或创建的记录
         """
+        tag_list = []
+        for tag in self.get_tags_by_name(*list(tags)):
+            tag_list.append(tag.id)
+
         if qs := self.db_client_tags.objects.filter(peer_id=peer_id, guid=self.guid).first():
-            qs.tags = str(tags if tags else '')
+            qs.tags = str(tag_list if tag_list else '')
             return qs.save()
 
         kwargs = {
@@ -644,7 +654,8 @@ class TagService:
         rows = self.db_client_tags.objects.filter(guid=self.guid, peer_id__in=peer_ids).values("peer_id", "tags")
         result: dict[str, list[str]] = {}
         for row in rows:
-            result[row["peer_id"]] = self._parse_tags(row.get("tags"))
+            tags_qs = self.get_tags_by_id(*eval(row.get("tags")))
+            result[row["peer_id"]] = [str(tag.tag) for tag in tags_qs]
         return result
 
     @staticmethod
