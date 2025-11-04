@@ -2,11 +2,14 @@ import uuid
 
 from django.core.management.base import BaseCommand
 
-from apps.db.service import UserService, GroupService, TokenService
+from apps.db.service import UserService, GroupService, TokenService, PersonalService
 
 
 class Command(BaseCommand):
     help = '管理员操作'
+
+    user_service = UserService()
+    group_service = GroupService()
 
     def add_arguments(self, parser):
         """添加命令行参数。
@@ -37,18 +40,22 @@ class Command(BaseCommand):
             help='指定用户组',
         )
 
+        parser.add_argument(
+            '--personal',
+            type=str,
+            help='创建一个地址簿',
+        )
+
     def handle(self, *args, **options):
         """处理命令逻辑。
 
         :param options: 命令行选项字典
         """
-        user_service = UserService()
-        group_service = GroupService()
 
         if options.get('init'):
             pwd = uuid.uuid1().hex[-8:]
-            if not user_service.get_user_by_name('admin'):
-                user_service.create_user(
+            if not self.user_service.get_user_by_name('admin'):
+                self.user_service.create_user(
                     username='admin',
                     password=pwd,
                     email='',
@@ -63,12 +70,12 @@ class Command(BaseCommand):
             username = options.get('user')
             password = options.get('passwd')
 
-            if user := user_service.get_user_by_name(username):
+            if user := self.user_service.get_user_by_name(username):
                 user.set_password(password)
                 TokenService().delete_token_by_user(user.username)
                 print(f'用户 {username} 已存在，已更新密码 {password}')
             else:
-                user_service.create_user(
+                self.user_service.create_user(
                     username=username,
                     password=password,
                     email='',
@@ -79,9 +86,19 @@ class Command(BaseCommand):
         elif options.get('group') and options.get('user'):
             group_name = options.get('group')
             user_name = options.get('user')
-            group_service.add_user_to_group(user_name, group_name=group_name)
+            self.group_service.add_user_to_group(user_name, group_name=group_name)
         elif options.get('group'):
             group_name = options.get('group')
-            group_service.create_group(group_name)
+            self.group_service.create_group(group_name)
+        elif personal := options.get('personal'):
+            user = self.get_admin_user
+            try:
+                PersonalService().create_personal(personal_name=personal, create_user=user, personal_type='public')
+            except Exception as e:
+                print(f'当前已存在 Personal: {personal}')
         else:
             print('参数错误')
+
+    @property
+    def get_admin_user(self):
+        return self.user_service.get_user_by_name('admin')

@@ -8,7 +8,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
 from apps.client_apis.common import check_login, request_debug_log, debug_request_None
-from apps.db.models import PeerInfo
+from apps.db.models import PeerInfo, Personal
 from apps.db.service import HeartBeatService, PeerInfoService, TokenService, UserService, \
     TagService, AuditConnService, PersonalService, AliasService, SharePersonalService, LoginClientService
 from common.utils import get_local_time
@@ -504,17 +504,27 @@ def ab_shared_profiles(request):
     token_service = TokenService(request=request)
     user_info = token_service.user_info
 
-    # 用户对应的地址簿
-    personals = SharePersonalService(user_info).get_user_personals()
+    # 分享给自己的地址簿
+    shared_personals = SharePersonalService(user_info).get_user_personals()
 
-    data = {
-        "total": len(personals),
-        "data": [
+    # 自己创建的地址簿
+    created_personals = user_info.user_personal.all()
+
+    personal_data = []
+    for personal in list(shared_personals) + list(created_personals):
+        personal = personal if isinstance(personal, Personal) else personal.personal
+        if personal.personal_type == 'private':
+            continue
+        personal_data.append(
             {
                 "guid": personal.guid,
                 "name": personal.personal_name,
-            } for personal in personals if personal.personal.personal_type != 'private'
-        ]
+            }
+        )
+
+    data = {
+        "total": len(personal_data),
+        "data": personal_data
     }
 
     return JsonResponse(data)
@@ -659,9 +669,11 @@ def ab_peer_update(request, guid):
 @check_login
 def ab_peer_delete(request, guid):
     token_service = TokenService(request=request)
+    user_info = token_service.user_info
     body = token_service.request_body
     PersonalService().del_peer_to_personal(
         guid=guid,
         peer_id=body,
+        user=user_info
     )
     return HttpResponse(status=200)

@@ -79,6 +79,7 @@ class Personal(models.Model):
         verbose_name_plural = '地址簿'
         ordering = ['-created_at']
         db_table = 'personal'
+        unique_together = [['personal_name', 'create_user']]
 
 
 class Tag(models.Model):

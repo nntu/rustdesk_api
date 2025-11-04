@@ -833,7 +833,7 @@ class PersonalService(BaseService):
             create_user=create_user,
             personal_type=personal_type,
         )
-        personal.personal_user.create(username=create_user)
+        personal.personal_user.create(user=create_user)
         logger.info(f'创建地址簿: name: {personal_name}, create_user: {create_user}, type: {personal_type}')
         return personal
 
@@ -877,7 +877,7 @@ class PersonalService(BaseService):
         peer = PeerInfoService().get_peer_info_by_peer_id(peer_id)
         return self.get_personal(guid=guid).personal_peer.create(peer=peer)
 
-    def del_peer_to_personal(self, guid, peer_id: list | str):
+    def del_peer_to_personal(self, guid, peer_id: list | str, user):
         if isinstance(peer_id, str):
             peer_id = [peer_id]
         peers = PeerInfoService().get_peers(*peer_id)
@@ -888,7 +888,7 @@ class PersonalService(BaseService):
             alias_service.set_alias(peer_id=peer.peer_id, guid=guid, alias="")
 
         # 清掉tag
-        tag_service = TagService(guid=guid)
+        tag_service = TagService(guid=guid, user=user)
         tag_service.del_tag_by_peer_id(*peer_id)
         res = self.get_personal(guid=guid).personal_peer.filter(peer__in=peers).delete()
         logger.info(f'从地址簿移除设备: guid={guid}, peer_ids={peer_id}')
