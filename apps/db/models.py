@@ -86,7 +86,7 @@ class Tag(models.Model):
     """
     标签模型
     """
-    id = models.AutoField(primary_key=True)
+    # id = models.AutoField(primary_key=True)
     tag = models.CharField(max_length=255, verbose_name='标签名称')
     color = models.CharField(max_length=50, verbose_name='标签颜色')
     guid = models.CharField(max_length=50, verbose_name='GUID')
@@ -97,7 +97,7 @@ class Tag(models.Model):
         unique_together = [['tag', 'guid']]
 
     def __str__(self):
-        return self.tag
+        return f'{self._meta.db_table}--{self.tag, self.color, self.guid}'
 
 
 class ClientTags(models.Model):
@@ -114,6 +114,9 @@ class ClientTags(models.Model):
         verbose_name = '标签'
         db_table = 'client_tags'
         unique_together = [['peer_id', 'guid']]
+
+    def __str__(self):
+        return f'{self._meta.db_table}--{self.user, self.peer_id, self.tags, self.guid}'
 
 
 class Token(models.Model):

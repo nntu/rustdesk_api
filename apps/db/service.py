@@ -552,13 +552,13 @@ class TagService:
         self.guid = guid
         self.user = UserService().get_user_info(user)
 
-    def get_user_tags_by_name(self, *tag_name):
-        # return self.db_tag.objects.filter(tag__in=tag_name, guid=self.guid).all()
-        return self.user.user_tags.filter(tag__in=tag_name, guid=self.guid).all()
+    def get_tags_by_name(self, *tag_name):
+        res = self.db_tag.objects.filter(tag__in=tag_name, guid=self.guid).all()
+        logger.debug(f"获取用户标签: {self.guid} - {tag_name} - {res}")
+        return res
 
-    def get_user_tags_by_id(self, *tag_id):
-        # return self.db_tag.objects.filter(id__in=tag_id, guid=self.guid).all()
-        return self.user.user_tags.filter(id__in=tag_id, guid=self.guid).all()
+    def get_tags_by_id(self, *tag_id):
+        return self.db_tag.objects.filter(id__in=tag_id, guid=self.guid).all()
 
     def create_tag(self, tag, color):
         res = self.db_tag.objects.create(tag=tag, color=color, guid=self.guid)
@@ -612,14 +612,6 @@ class TagService:
         """
         return self.db_tag.objects.filter(guid=self.guid).all()
 
-    @staticmethod
-    def __get_tags(list_a: list, list_b: list):
-        set_a = set(list_a)
-        set_b = set(list_b)
-        if set_a & set_b == set_b:
-            return list(set_b)
-        return list_a + list_b
-
     def set_user_tag_by_peer_id(self, peer_id, tags):
         """
         为指定设备设置标签（覆盖式）。
@@ -629,12 +621,12 @@ class TagService:
         :returns: 更新或创建的记录
         """
         tag_list = []
-        for tag in self.get_user_tags_by_name(*list(tags)):
+        for tag in self.get_tags_by_name(*list(tags)):
             tag_list.append(tag.id)
 
         # if qs := self.db_client_tags.objects.filter(peer_id=peer_id, guid=self.guid).first():
         if qs := self.user.user_tags.filter(peer_id=peer_id, guid=self.guid).first():
-            qs.tags = str(tag_list if tag_list else '[]')
+            qs.tags = str(tag_list if tag_list else [])
             return qs.save()
 
         kwargs = {
@@ -642,12 +634,18 @@ class TagService:
             "tags": str(tag_list),
             "guid": self.guid,
         }
-        res = self.user.user_tags.objects.create(**kwargs)
+        res = self.user.user_tags.create(**kwargs)
         logger.info(f"设置标签: {self.guid} - {peer_id} - {tag_list if tag_list else []}")
         return res
 
     def del_tag_by_peer_id(self, *peer_id):
-        res = self.user.user_tags.objects.filter(peer_id__in=peer_id, guid=self.guid).delete()
+        """
+        删除指定设备的标签记录。
+
+        :param peer_id: 一个或多个设备的 peer_id
+        :returns: 删除操作返回的 (rows_deleted, details)
+        """
+        res = self.user.user_tags.filter(peer_id__in=peer_id, guid=self.guid).delete()
         logger.info(f"删除标签: {self.guid} - {peer_id}")
         return res
 
@@ -658,7 +656,7 @@ class TagService:
         :param peer_id: 设备 peer_id
         :returns: 标签字符串列表，若无记录返回空列表
         """
-        row = self.user.user_tags.objects.filter(peer_id=peer_id, guid=self.guid).values("tags").first()
+        row = self.user.user_tags.filter(peer_id=peer_id, guid=self.guid).values("tags").first()
         if not row:
             return []
         return self._parse_tags(row.get("tags"))
@@ -673,13 +671,16 @@ class TagService:
         if not peer_ids:
             return {}
         rows = self.db_client_tags.objects.filter(guid=self.guid, peer_id__in=peer_ids).values("peer_id", "tags")
+        logger.debug(f"批量获取标签: {self.guid} peers: {peer_ids} result: {rows}")
         result: dict[str, list[str]] = {}
         for row in rows:
             tags = eval(row.get("tags") or '[]')
-            tags_qs = self.get_user_tags_by_id(*tags)
+            tags_qs = self.get_tags_by_id(*tags)
+            logger.debug(f"标签: {self.guid} peers: {row['peer_id']} tags: {tags} result: {tags_qs}")
             if not tags_qs:
                 continue
-            result[row["peer_id"]] = [str(tag) for tag in tags_qs.first().tags]
+            result[row["peer_id"]] = [str(tag.tag) for tag in tags_qs]
+        logger.debug(f"批量获取标签结果: guid: {self.guid} peers: {peer_ids} result: {result}")
         return result
 
     @staticmethod

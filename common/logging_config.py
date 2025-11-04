@@ -102,7 +102,7 @@ def build_django_logging(debug: bool, log_dir: str, app_log_filename: str = 'rus
             ),
             'console': build_stream_handler(
                 formatter='verbose' if debug else 'simple',
-                level='INFO',
+                level='DEBUG' if debug else 'INFO',
             ),
         },
         'filters': {
