@@ -272,10 +272,10 @@ class GroupService(BaseService):
 
             if to_update:
                 UserPrefile.objects.bulk_update(to_update, ["group"])
-                logger.info(f"更新用户组: {to_update}")
+                # logger.info(f"更新用户组: {to_update}")
             if to_create:
                 UserPrefile.objects.bulk_create(to_create)
-                logger.info(f"创建用户组: {to_create}")
+                # logger.info(f"创建用户组: {to_create}")
 
 
 class PermissionService(BaseService):
@@ -840,7 +840,11 @@ class PersonalService(BaseService):
 
     def create_self_personal(self, username):
         username = self.get_user_info(username)
-        personal = self.create_personal(personal_name=username, create_user=username, personal_type="private")
+        personal = self.create_personal(
+            personal_name=f'{username.username}_personal',
+            create_user=username,
+            personal_type="private"
+        )
         logger.info(f'创建个人地址簿: user={username}')
         return personal
 
