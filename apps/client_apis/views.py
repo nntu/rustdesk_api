@@ -162,45 +162,13 @@ def logout(request: HttpRequest):
     return JsonResponse({'code': 1})
 
 
-# @require_http_methods(["GET", "POST"])
-# @request_debug_log
-# @check_login
-# def ab(request: HttpRequest):
-#     """
-#     获取地址簿
-#     :param request:
-#     :return:
-#     """
-#     if request.method == 'GET':
-#         # return JsonResponse({'error': 'None'})
-#         return JsonResponse(
-#             {
-#                 "data": json.dumps(
-#                     {
-#                         'peers': [],
-#                         'tags': [],
-#                         'tag_colors': {},
-#                     }
-#                 )
-#             }
-#         )
-#     elif request.method == 'POST':
-#         token_service = TokenService(request=request)
-#         user_info = token_service.user_info
-#         body = token_service.request_body
-#         data = json.loads(body.get('data')) if body.get('data') else {}
-#
-#         tag_service = TagService(user_info)
-#         try:
-#             if tags := data.get('tags', []):
-#                 for tag in tags:
-#                     color = json.loads(data['tag_colors'])[tag]
-#                     tag_service.create_tag(tag, color)
-#         except Exception as e:
-#             logger.error(traceback.format_exc())
-#             return JsonResponse({'error': f'创建标签失败: {e}'})
-#
-#     return JsonResponse({'code': 1})
+@require_http_methods(["GET", "POST"])
+@request_debug_log
+@check_login
+@debug_request_None
+def ab(request: HttpRequest):
+    # 好像在token失效后的残留页面会请求这个接口
+    return None
 
 
 @require_http_methods(["POST"])
