@@ -7,7 +7,7 @@ from django.http import HttpRequest, JsonResponse, HttpResponse
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
-from apps.client_apis.common import check_login, request_debug_log, debug_request_None
+from apps.client_apis.common import check_login_by_json, request_debug_log, debug_request_None
 from apps.db.models import PeerInfo, Personal
 from apps.db.service import HeartBeatService, PeerInfoService, TokenService, UserService, \
     TagService, AuditConnService, PersonalService, AliasService, SharePersonalService, LoginClientService
@@ -135,7 +135,7 @@ def login(request: HttpRequest):
 
 @require_http_methods(["POST"])
 @request_debug_log
-@check_login
+@check_login_by_json
 def logout(request: HttpRequest):
     token_service = TokenService(request=request)
     token = token_service.authorization
@@ -164,7 +164,7 @@ def logout(request: HttpRequest):
 
 @require_http_methods(["GET", "POST"])
 @request_debug_log
-@check_login
+@check_login_by_json
 @debug_request_None
 def ab(request: HttpRequest):
     # 好像在token失效后的残留页面会请求这个接口
@@ -173,7 +173,7 @@ def ab(request: HttpRequest):
 
 @require_http_methods(["POST"])
 @request_debug_log
-@check_login
+@check_login_by_json
 def ab_personal(request: HttpRequest):
     """
     获取个人地址簿
@@ -193,7 +193,7 @@ def ab_personal(request: HttpRequest):
 
 @require_http_methods(["POST"])
 @request_debug_log
-@check_login
+@check_login_by_json
 def current_user(request: HttpRequest):
     """
     获取当前用户信息
@@ -215,7 +215,7 @@ def current_user(request: HttpRequest):
 
 @require_http_methods(["GET"])
 @request_debug_log
-@check_login
+@check_login_by_json
 def users(request: HttpRequest):
     """
     获取所有用户信息
@@ -253,7 +253,7 @@ def users(request: HttpRequest):
 
 @require_http_methods(["GET"])
 @request_debug_log
-@check_login
+@check_login_by_json
 def peers(request: HttpRequest):
     """
     展示当前用户可以看到的设备信息
@@ -295,7 +295,7 @@ def peers(request: HttpRequest):
 @require_http_methods(["GET"])
 @request_debug_log
 @debug_request_None  # 官方对于设备组有权限控制，目前无法控制，直接返回None，接口不报错即可
-@check_login
+@check_login_by_json
 def device_group_accessible(request):
     """
     admin获取当前服务端所有设备信息
@@ -382,7 +382,7 @@ def audit_file(request):
 
 @require_http_methods(["POST"])
 @request_debug_log
-@check_login
+@check_login_by_json
 def ab_tags(request, guid):
     token_service = TokenService(request=request)
     user_info = token_service.user_info
@@ -399,7 +399,7 @@ def ab_tags(request, guid):
 
 @require_http_methods(["DELETE"])
 @request_debug_log
-@check_login
+@check_login_by_json
 def ab_tag(request, guid):
     token_service = TokenService(request=request)
     body = token_service.request_body
@@ -413,7 +413,7 @@ def ab_tag(request, guid):
 
 @require_http_methods(["POST", "PUT"])
 @request_debug_log
-@check_login
+@check_login_by_json
 def ab_tag_add(request, guid):
     token_service = TokenService(request=request)
     user_info = token_service.user_info
@@ -431,7 +431,7 @@ def ab_tag_add(request, guid):
 
 @require_http_methods(["PUT"])
 @request_debug_log
-@check_login
+@check_login_by_json
 def ab_tag_rename(request, guid):
     token_service = TokenService(request=request)
     body = token_service.request_body
@@ -447,7 +447,7 @@ def ab_tag_rename(request, guid):
 
 @require_http_methods(["POST"])
 @request_debug_log
-@check_login
+@check_login_by_json
 def ab_settings(request):
     return JsonResponse(
         {
@@ -458,7 +458,7 @@ def ab_settings(request):
 
 @require_http_methods(["POST"])
 @request_debug_log
-@check_login
+@check_login_by_json
 def ab_shared_profiles(request):
     # {
     #     "total": 0,
@@ -500,7 +500,7 @@ def ab_shared_profiles(request):
 
 @require_http_methods(["POST"])
 @request_debug_log
-@check_login
+@check_login_by_json
 def ab_peers(request):
     """
     返回用户添加到地址簿的设备列表
@@ -582,7 +582,7 @@ def ab_peers(request):
 
 @require_http_methods(["POST"])
 @request_debug_log
-@check_login
+@check_login_by_json
 def ab_peer_add(request, guid):
     # {
     #     "id": "163052894",
@@ -614,7 +614,7 @@ def ab_peer_add(request, guid):
 
 @require_http_methods(["PUT"])
 @request_debug_log
-@check_login
+@check_login_by_json
 def ab_peer_update(request, guid):
     token_service = TokenService(request=request)
     user_info = token_service.user_info
@@ -634,7 +634,7 @@ def ab_peer_update(request, guid):
 
 @require_http_methods(["DELETE"])
 @request_debug_log
-@check_login
+@check_login_by_json
 def ab_peer_delete(request, guid):
     token_service = TokenService(request=request)
     user_info = token_service.user_info

@@ -29,6 +29,8 @@ SECRET_KEY = 'django-insecure-)io=oztl360$7mt#&d86kecbaklz^w==@toytn#qepbitg2@hr
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = PublicConfig.DEBUG
 
+LOGGING = build_django_logging(DEBUG, LOG_PATH)
+
 ALLOWED_HOSTS = ['*']
 
 # debug-toolbar host
@@ -117,8 +119,6 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
-
-LOGGING = build_django_logging(DEBUG, LOG_PATH)
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/

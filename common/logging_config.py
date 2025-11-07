@@ -114,7 +114,7 @@ def build_django_logging(debug: bool, log_dir: str, app_log_filename: str = 'rus
             '': {
                 'handlers': ['file', 'console'],
                 'level': 'DEBUG' if debug else 'INFO',
-                'propagate': False,
+                'propagate': True,
             },
             'django': {
                 'handlers': ['file', 'console'],
@@ -123,11 +123,11 @@ def build_django_logging(debug: bool, log_dir: str, app_log_filename: str = 'rus
             },
             'custom': {
                 'handlers': ['file', 'console'],
-                'level': 'INFO',
+                'level': 'DEBUG' if debug else 'INFO',
                 'propagate': False,
             },
             'request_debug_log': {
-                'handlers': ['request_debug_file'],
+                'handlers': ['console', 'request_debug_file'] if debug else ['request_debug_file'],
                 'level': 'DEBUG',
                 'propagate': False,
             },

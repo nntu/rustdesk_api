@@ -452,9 +452,10 @@ class TokenService(BaseService):
     def __init__(self, request: HttpRequest | None = None):
         self.request = request
 
-    def create_token(self, username, uuid):
+    def create_token(self, username, uuid, client_type='client'):
+        assert client_type in ['client', 'web', 'api']
         username = self.get_user_info(username)
-        token = f"{get_randem_md5()}_{username}"
+        token = f"{get_randem_md5()}_{client_type}_{username}"
         self.db.objects.create(
             username=self.get_user_info(username),
             uuid=uuid,
@@ -514,6 +515,14 @@ class TokenService(BaseService):
         if self.request:
             auth = self.authorization
             username = auth.split("_")[-1]
+            return UserService().get_user_by_name(username)
+        return None
+
+    @property
+    def client_type(self):
+        if self.request:
+            auth = self.authorization
+            username = auth.split("_")[-2]
             return UserService().get_user_by_name(username)
         return None
 
