@@ -457,14 +457,20 @@ class TokenService(BaseService):
     def create_token(self, username, uuid):
         username = self.get_user_info(username)
         token = f"{get_randem_md5()}_{username}"
-        self.db.objects.create(
-            username=self.get_user_info(username),
-            uuid=uuid,
-            token=token,
-            created_at=get_local_time(),
-            last_used_at=get_local_time(),
-        )
-        logger.info(f"创建令牌: user: {username} uuid: {uuid} token: {token}")
+
+        if qs := self.db.objects.filter(username=username, uuid=uuid).first():
+            qs.token = token
+            qs.save()
+            logger.info(f"更新令牌: user: {username} uuid: {uuid} token: {token}")
+        else:
+            self.db.objects.create(
+                username=self.get_user_info(username),
+                uuid=uuid,
+                token=token,
+                created_at=get_local_time(),
+                last_used_at=get_local_time(),
+            )
+            logger.info(f"创建令牌: user: {username} uuid: {uuid} token: {token}")
         return token
 
     def check_token(self, token, timeout=3600):
