@@ -460,6 +460,8 @@ class TokenService(BaseService):
 
         if qs := self.db.objects.filter(username=username, uuid=uuid).first():
             qs.token = token
+            qs.created_at = get_local_time()
+            qs.last_used_at = get_local_time()
             qs.save()
             logger.info(f"更新令牌: user: {username} uuid: {uuid} token: {token}")
         else:
