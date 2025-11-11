@@ -36,7 +36,7 @@ ALLOWED_HOSTS = ['*']
 # debug-toolbar host
 INTERNAL_IPS = ['localhost', '127.0.0.1'] if DEBUG else []
 DEBUG_TOOLBAR_CONFIG = {
-    'SQL_WARNING_THRESHOLD': 50,  # 超过50ms标红
+    'SQL_WARNING_THRESHOLD': 200,  # 超过200ms标红
     # 'RENDER_PANELS': True,        # 完整显示长查询
 }
 
@@ -144,3 +144,11 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # 注意：仅在受信任代理链路下开启
 USE_X_FORWARDED_HOST = True
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# session设置
+# 会话有效期（秒
+SESSION_COOKIE_AGE = PublicConfig.SESSION_TIMEOUT  # session失效时间
+# 每次请求都保存 session（滑动过期）
+SESSION_SAVE_EVERY_REQUEST = True
+# 浏览器关闭即失效，True 表示不设置持久化过期时间，让浏览器会话结束即删除
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
