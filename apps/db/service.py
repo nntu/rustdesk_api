@@ -4,7 +4,7 @@ import logging
 from datetime import timedelta
 from typing import TypeVar
 
-from django.contrib.auth.models import User, Group, Permission
+from django.contrib.auth.models import User, Group
 from django.db import models
 from django.db import transaction
 from django.db.models import Q
@@ -21,6 +21,7 @@ from apps.db.models import (
     UserPrefile,
     Personal, Alias, ClientTags, SharePersonal,
 )
+from common.error import UserNotFoundError
 from common.utils import get_local_time, get_randem_md5
 
 logger = logging.getLogger(__name__)
@@ -113,7 +114,7 @@ class UserService(BaseService):
         else:
             raise ValueError("Either username or email must be provided.")
         if not user:
-            raise ValueError("User does not exist.")
+            raise UserNotFoundError(email or username)
         user.set_password(password)
         user.save()
         logger.info(f"设置用户密码: {user}")
@@ -151,39 +152,6 @@ class UserService(BaseService):
 
     def get_list_by_status(self, status, page=1, page_size=10):
         return self.__get_list(status=status, page=page, page_size=page_size)
-
-    def set_user_permissions(self, username, *permissions):
-        permissions = self.db.objects.filter(
-            user_permissions__codename__in=[*permissions]
-        )
-        user = self.get_user_by_name(username)
-        if user:
-            user.user_permissions.add(*permissions)
-
-    def del_user_permissions(self, username, *permissions):
-        permissions = self.db.objects.filter(
-            user_permissions__codename__in=[*permissions]
-        )
-
-        user = self.get_user_by_name(username)
-        if user:
-            user.user_permissions.remove(*permissions)
-            logger.info(f"删除用户权限: {user}")
-
-    def get_user_permissions(self, username):
-        user = self.get_user_by_name(username)
-        if user:
-            return user.user_permissions.all()
-        return None
-
-    def is_user_has_permission(self, username, *permissions) -> bool:
-        permissions = self.db.objects.filter(
-            user_permissions__codename__in=[*permissions]
-        )
-        user = self.get_user_by_name(username)
-        if user:
-            return user.has_perm(*permissions)
-        return False
 
     def get_user_by_id(self, user_id) -> User:
         return self.db.objects.filter(id=user_id).first()
@@ -278,34 +246,6 @@ class GroupService(BaseService):
             if to_create:
                 UserPrefile.objects.bulk_create(to_create)
                 # logger.info(f"创建用户组: {to_create}")
-
-
-class PermissionService(BaseService):
-    db = Permission
-
-    def get_permissions_list(self):
-        return self.db.objects.all()
-
-    def create_permission(self, content_type_id, name, codename) -> Permission:
-        perm = self.db.objects.create(
-            content_type_id=content_type_id, name=name, codename=codename
-        )
-        logger.info(
-            f"创建权限: content_type_id={content_type_id}, name={name}, codename={codename}"
-        )
-        return perm
-
-    def get_by_content_type_id(self, content_type_id):
-        return self.db.objects.filter(content_type_id=content_type_id).all()
-
-    def get_by_codename(self, codename):
-        return self.db.objects.filter(codename=codename).all()
-
-    def get_by_name(self, name):
-        return self.db.objects.filter(name=name).all()
-
-    def get_permissions(self, *permission_name):
-        return self.db.objects.filter(name__in=permission_name).all()
 
 
 class PeerInfoService(BaseService):
