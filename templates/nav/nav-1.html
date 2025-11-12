@@ -1,0 +1,176 @@
+<style>
+    .nav1-stats {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(160px, 220px));
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+    .nav1-card {
+        border: 1px solid #eaeef2;
+        border-radius: 8px;
+        padding: 12px 14px;
+        background: #ffffff;
+    }
+
+    .nav1-card-title {
+        font-size: 12px;
+        color: #6a737d;
+        margin-bottom: 6px;
+    }
+
+    .nav1-card-value {
+        font-size: 22px;
+        font-weight: 700;
+        color: #0b3d60;
+        line-height: 1.2;
+    }
+
+    .nav1-section-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #0b3d60;
+        margin: 8px 0 10px 0;
+    }
+
+    .nav1-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        border: 1px solid #eaeef2;
+        border-radius: 8px;
+        overflow: hidden;
+        background: #ffffff;
+    }
+
+    .nav1-table th,
+    .nav1-table td {
+        text-align: left;
+        padding: 10px 12px;
+        font-size: 14px;
+        border-bottom: 1px solid #eaeef2;
+    }
+
+    .nav1-table thead th {
+        background: #f7f8fa;
+        color: #6a737d;
+        font-weight: 600;
+    }
+
+    .nav1-table tbody tr:hover {
+        background: #f9fbff;
+    }
+
+    .nav1-empty {
+        padding: 16px;
+        color: #8a939e;
+        border: 1px dashed #eaeef2;
+        border-radius: 8px;
+        background: #ffffff;
+    }
+
+    @media (max-width: 768px) {
+        .nav1-stats {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .nav1-table th:nth-child(6),
+        .nav1-table td:nth-child(6) {
+            display: none; /* 小屏隐藏创建时间列 */
+        }
+    }
+
+    .nav1-pagination {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 12px;
+    }
+
+    .nav1-page-btn {
+        appearance: none;
+        border: 1px solid #eaeef2;
+        background: #ffffff;
+        color: #0b3d60;
+        border-radius: 6px;
+        padding: 6px 12px;
+        font-size: 14px;
+        line-height: 1.2;
+        cursor: pointer;
+        transition: background-color .15s ease, border-color .15s ease, box-shadow .15s ease;
+    }
+
+    .nav1-page-btn:hover:not(:disabled) {
+        background: #eef2f6;
+        border-color: #d0d7de;
+    }
+
+    .nav1-page-btn:focus-visible {
+        outline: none;
+        border-color: #1f6feb;
+        box-shadow: 0 0 0 3px rgba(31, 111, 235, 0.2);
+    }
+
+    .nav1-page-btn:disabled {
+        background: #f7f8fa;
+        color: #8a939e;
+        cursor: not-allowed;
+        border-color: #eaeef2;
+    }
+</style>
+
+<div class="nav1-section-title">总览</div>
+<div class="nav1-stats">
+    <div class="nav1-card">
+        <div class="nav1-card-title">用户数</div>
+        <div class="nav1-card-value">{{ user_count|default:0 }}</div>
+    </div>
+    <div class="nav1-card">
+        <div class="nav1-card-title">设备数</div>
+        <div class="nav1-card-value">{{ device_count|default:0 }}</div>
+    </div>
+    {# 可在此扩展更多统计卡片，如在线设备数、分组数等 #}
+</div>
+
+<div class="nav1-section-title">设备列表</div>
+{% if devices %}
+    <table class="nav1-table" aria-label="设备列表">
+        <thead>
+        <tr>
+            <th style="width: 64px;">序号</th>
+            <th>设备ID</th>
+            <th>设备名</th>
+            <th>系统</th>
+            <th>版本</th>
+            <th style="width: 200px;">创建时间</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for d in devices %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ d.peer_id }}</td>
+                <td>{{ d.device_name }}</td>
+                <td>{{ d.os }}</td>
+                <td>{{ d.version }}</td>
+                <td>{{ d.created_at|date:"Y-m-d H:i:s" }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    <div class="nav1-pagination" style="display:flex;align-items:center;gap:10px;margin-top:12px;">
+        <button class="nav1-page-btn" data-key="nav-1"
+                {% if page_obj.has_previous %}data-page="{{ page_obj.previous_page_number }}"{% else %}data-page=""
+                disabled{% endif %}>上一页
+        </button>
+        <span style="color:#6a737d;">第 {{ page_obj.number }} / {{ paginator.num_pages }} 页（共 {{ paginator.count }} 条）</span>
+        <button class="nav1-page-btn" data-key="nav-1"
+                {% if page_obj.has_next %}data-page="{{ page_obj.next_page_number }}"{% else %}data-page=""
+                disabled{% endif %}>下一页
+        </button>
+    </div>
+{% else %}
+    <div class="nav1-empty">暂无设备数据</div>
+{% endif %}
+
+

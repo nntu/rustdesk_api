@@ -13,13 +13,13 @@ logger = logging.getLogger(__name__)
 
 
 @request_debug_log
+@login_required(login_url='web_login')
 def index(request):
-    # cookies = request.COOKIES
-    # print(cookies)
-    # print(dict(cookies))
-    # for key, value in cookies.items():
-    #     print(f"{key}: {value}")
-    # return JsonResponse({'message': 'Web正在开发中'})
+    if request.method == 'GET':
+        next_url = request.GET.get('next')
+        # 若已存在认证态或未过期的自定义 session，则直接跳转
+        if getattr(request, 'user', None) and request.user.is_authenticated:
+            return redirect(next_url or 'web_home')
     return render(request, 'login.html')
 
 
