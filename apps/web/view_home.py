@@ -7,6 +7,7 @@ from django.db.models import Q, Exists, OuterRef, F, Subquery
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.utils import timezone
+from django.views.decorators.http import require_http_methods
 
 from apps.client_apis.common import request_debug_log
 from apps.db.models import PeerInfo, HeartBeat, Alias, ClientTags, Personal
@@ -32,6 +33,7 @@ def is_default_personal(personal, user):
 
 
 @request_debug_log
+@require_http_methods(['GET'])
 @login_required(login_url='web_login')
 def home(request):
     """
@@ -47,6 +49,7 @@ def home(request):
 
 
 @request_debug_log
+@require_http_methods(['GET'])
 @login_required(login_url='web_login')
 def nav_content(request: HttpRequest) -> HttpResponse:
     """
@@ -252,6 +255,7 @@ def nav_content(request: HttpRequest) -> HttpResponse:
 
 
 @request_debug_log
+@require_http_methods(['POST'])
 @login_required(login_url='web_login')
 def rename_alias(request: HttpRequest) -> JsonResponse:
     """
@@ -265,8 +269,6 @@ def rename_alias(request: HttpRequest) -> JsonResponse:
     - 别名基于用户的“默认地址簿”（如不存在则自动创建，私有）
     - 针对 (peer_id, 默认地址簿) 维度进行 upsert
     """
-    if request.method != 'POST':
-        return JsonResponse({'ok': False, 'err_msg': 'Method not allowed'}, status=405)
     peer_id = (request.POST.get('peer_id') or '').strip()
     alias_text = (request.POST.get('alias') or '').strip()
     if not peer_id or not alias_text:
@@ -290,6 +292,7 @@ def rename_alias(request: HttpRequest) -> JsonResponse:
 
 
 @request_debug_log
+@require_http_methods(['GET'])
 @login_required(login_url='web_login')
 def device_detail(request: HttpRequest) -> JsonResponse:
     """
@@ -300,8 +303,6 @@ def device_detail(request: HttpRequest) -> JsonResponse:
     :return: JSON 响应，包含 peer_id/username/hostname/alias/platform/tags
     :rtype: JsonResponse
     """
-    if request.method != 'GET':
-        return JsonResponse({'ok': False, 'err_msg': 'Method not allowed'}, status=405)
     peer_id = (request.GET.get('peer_id') or '').strip()
     if not peer_id:
         return JsonResponse({'ok': False, 'err_msg': '参数错误'}, status=400)
@@ -336,6 +337,7 @@ def device_detail(request: HttpRequest) -> JsonResponse:
 
 
 @request_debug_log
+@require_http_methods(['POST'])
 @login_required(login_url='web_login')
 def update_device(request: HttpRequest) -> JsonResponse:
     """
@@ -352,8 +354,6 @@ def update_device(request: HttpRequest) -> JsonResponse:
     - 别名写入当前用户的“默认地址簿”（不存在则创建）
     - 标签写入 ClientTags（当前用户 + 默认地址簿 guid 作用域）
     """
-    if request.method != 'POST':
-        return JsonResponse({'ok': False, 'err_msg': 'Method not allowed'}, status=405)
     peer_id = (request.POST.get('peer_id') or '').strip()
     if not peer_id:
         return JsonResponse({'ok': False, 'err_msg': '参数错误'}, status=400)
@@ -412,6 +412,7 @@ def update_device(request: HttpRequest) -> JsonResponse:
 
 
 @request_debug_log
+@require_http_methods(['GET'])
 @login_required(login_url='web_login')
 def device_statuses(request: HttpRequest) -> JsonResponse:
     """
@@ -426,8 +427,6 @@ def device_statuses(request: HttpRequest) -> JsonResponse:
         - 前端应在请求头携带 ``X-Session-No-Renew: 1``，以避免该轮询请求“续命”会话
         - 仅执行只读查询，不做任何写操作
     """
-    if request.method != 'GET':
-        return JsonResponse({'ok': False, 'err_msg': 'Method not allowed'}, status=405)
     raw_ids = (request.GET.get('ids') or '').strip()
     if not raw_ids:
         return JsonResponse({'ok': True, 'data': {}})
@@ -448,6 +447,7 @@ def device_statuses(request: HttpRequest) -> JsonResponse:
 
 
 @request_debug_log
+@require_http_methods(['POST'])
 @login_required(login_url='web_login')
 def update_user(request: HttpRequest) -> JsonResponse:
     """
@@ -456,8 +456,6 @@ def update_user(request: HttpRequest) -> JsonResponse:
     :param request: POST，包含 username, full_name(可选), email(可选), is_staff(可选: '1'/'0')
     :return: {"ok": true}
     """
-    if request.method != 'POST':
-        return JsonResponse({'ok': False, 'err_msg': 'Method not allowed'}, status=405)
     if not request.user.is_staff:
         return JsonResponse({'ok': False, 'err_msg': '无权限'}, status=403)
     username = (request.POST.get('username') or '').strip()
@@ -482,6 +480,7 @@ def update_user(request: HttpRequest) -> JsonResponse:
 
 
 @request_debug_log
+@require_http_methods(['POST'])
 @login_required(login_url='web_login')
 def reset_user_password(request: HttpRequest) -> JsonResponse:
     """
@@ -490,8 +489,6 @@ def reset_user_password(request: HttpRequest) -> JsonResponse:
     :param request: POST，包含 username, password1, password2
     :return: {"ok": true}
     """
-    if request.method != 'POST':
-        return JsonResponse({'ok': False, 'err_msg': 'Method not allowed'}, status=405)
     if not request.user.is_staff:
         return JsonResponse({'ok': False, 'err_msg': '无权限'}, status=403)
     username = (request.POST.get('username') or '').strip()
@@ -512,6 +509,7 @@ def reset_user_password(request: HttpRequest) -> JsonResponse:
 
 
 @request_debug_log
+@require_http_methods(['POST'])
 @login_required(login_url='web_login')
 def create_personal(request: HttpRequest) -> JsonResponse:
     """
@@ -520,8 +518,6 @@ def create_personal(request: HttpRequest) -> JsonResponse:
     :param request: POST，包含 personal_name, personal_type
     :return: {"ok": true, "data": {"guid": "xxx"}}
     """
-    if request.method != 'POST':
-        return JsonResponse({'ok': False, 'err_msg': 'Method not allowed'}, status=405)
     personal_name = (request.POST.get('personal_name') or '').strip()
     # personal_type = (request.POST.get('personal_type') or '').strip()
 
@@ -550,6 +546,7 @@ def create_personal(request: HttpRequest) -> JsonResponse:
 
 
 @request_debug_log
+@require_http_methods(["POST"])
 @login_required(login_url='web_login')
 def delete_personal(request: HttpRequest) -> JsonResponse:
     """
@@ -558,8 +555,6 @@ def delete_personal(request: HttpRequest) -> JsonResponse:
     :param request: POST，包含 guid
     :return: {"ok": true}
     """
-    if request.method != 'POST':
-        return JsonResponse({'ok': False, 'err_msg': 'Method not allowed'}, status=405)
     guid = (request.POST.get('guid') or '').strip()
 
     if not guid:
@@ -578,6 +573,7 @@ def delete_personal(request: HttpRequest) -> JsonResponse:
 
 
 @request_debug_log
+@require_http_methods(["POST"])
 @login_required(login_url='web_login')
 def rename_personal(request: HttpRequest) -> JsonResponse:
     """
@@ -586,8 +582,6 @@ def rename_personal(request: HttpRequest) -> JsonResponse:
     :param request: POST，包含 guid, new_name
     :return: {"ok": true}
     """
-    if request.method != 'POST':
-        return JsonResponse({'ok': False, 'err_msg': 'Method not allowed'}, status=405)
     guid = (request.POST.get('guid') or '').strip()
     new_name = (request.POST.get('new_name') or '').strip()
 
@@ -616,6 +610,7 @@ def rename_personal(request: HttpRequest) -> JsonResponse:
 
 
 @request_debug_log
+@require_http_methods(["GET"])
 @login_required(login_url='web_login')
 def personal_detail(request: HttpRequest) -> JsonResponse:
     """
@@ -624,8 +619,6 @@ def personal_detail(request: HttpRequest) -> JsonResponse:
     :param request: GET，包含 guid
     :return: {"ok": true, "data": {...}}
     """
-    if request.method != 'GET':
-        return JsonResponse({'ok': False, 'err_msg': 'Method not allowed'}, status=405)
     guid = (request.GET.get('guid') or '').strip()
 
     if not guid:
@@ -679,6 +672,7 @@ def personal_detail(request: HttpRequest) -> JsonResponse:
 
 
 @request_debug_log
+@require_http_methods(['GET'])
 @login_required(login_url='web_login')
 def get_personal_list(request: HttpRequest) -> JsonResponse:
     """
@@ -687,8 +681,6 @@ def get_personal_list(request: HttpRequest) -> JsonResponse:
     :param request: GET请求
     :return: {"ok": true, "data": [{"guid": "xxx", "name": "xxx", "display_name": "xxx"}, ...]}
     """
-    if request.method != 'GET':
-        return JsonResponse({'ok': False, 'err_msg': 'Method not allowed'}, status=405)
 
     # 获取当前用户的所有地址簿
     personals = Personal.objects.filter(create_user=request.user).order_by('personal_name')
@@ -711,6 +703,7 @@ def get_personal_list(request: HttpRequest) -> JsonResponse:
 
 
 @request_debug_log
+@require_http_methods(['POST'])
 @login_required(login_url='web_login')
 def add_device_to_personal(request: HttpRequest) -> JsonResponse:
     """
@@ -719,8 +712,6 @@ def add_device_to_personal(request: HttpRequest) -> JsonResponse:
     :param request: POST，包含 guid, peer_id, alias(可选)
     :return: {"ok": true}
     """
-    if request.method != 'POST':
-        return JsonResponse({'ok': False, 'err_msg': 'Method not allowed'}, status=405)
     guid = (request.POST.get('guid') or '').strip()
     peer_id = (request.POST.get('peer_id') or '').strip()
     alias_text = (request.POST.get('alias') or '').strip()
@@ -751,6 +742,7 @@ def add_device_to_personal(request: HttpRequest) -> JsonResponse:
 
 
 @request_debug_log
+@require_http_methods(['POST'])
 @login_required(login_url='web_login')
 def remove_device_from_personal(request: HttpRequest) -> JsonResponse:
     """
@@ -759,8 +751,6 @@ def remove_device_from_personal(request: HttpRequest) -> JsonResponse:
     :param request: POST，包含 guid, peer_id
     :return: {"ok": true}
     """
-    if request.method != 'POST':
-        return JsonResponse({'ok': False, 'err_msg': 'Method not allowed'}, status=405)
     guid = (request.POST.get('guid') or '').strip()
     peer_id = (request.POST.get('peer_id') or '').strip()
 
@@ -784,6 +774,7 @@ def remove_device_from_personal(request: HttpRequest) -> JsonResponse:
 
 
 @request_debug_log
+@require_http_methods(['POST'])
 @login_required(login_url='web_login')
 def update_device_alias_in_personal(request: HttpRequest) -> JsonResponse:
     """
@@ -792,8 +783,6 @@ def update_device_alias_in_personal(request: HttpRequest) -> JsonResponse:
     :param request: POST，包含 guid, peer_id, alias
     :return: {"ok": true}
     """
-    if request.method != 'POST':
-        return JsonResponse({'ok': False, 'err_msg': 'Method not allowed'}, status=405)
     guid = (request.POST.get('guid') or '').strip()
     peer_id = (request.POST.get('peer_id') or '').strip()
     alias_text = (request.POST.get('alias') or '').strip()
@@ -827,6 +816,7 @@ def update_device_alias_in_personal(request: HttpRequest) -> JsonResponse:
 
 
 @request_debug_log
+@require_http_methods(['POST'])
 @login_required(login_url='web_login')
 def update_device_tags_in_personal(request: HttpRequest) -> JsonResponse:
     """
@@ -835,8 +825,6 @@ def update_device_tags_in_personal(request: HttpRequest) -> JsonResponse:
     :param request: POST，包含 guid, peer_id, tags
     :return: {"ok": true}
     """
-    if request.method != 'POST':
-        return JsonResponse({'ok': False, 'err_msg': 'Method not allowed'}, status=405)
     guid = (request.POST.get('guid') or '').strip()
     peer_id = (request.POST.get('peer_id') or '').strip()
     tags_text = (request.POST.get('tags') or '').strip()
