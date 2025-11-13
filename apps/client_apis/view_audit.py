@@ -9,7 +9,6 @@ from apps.db.service import AuditConnService
 
 @request_debug_log
 @require_http_methods(["POST"])
-
 def audit_conn(request: HttpRequest):
     """
     连接日志
