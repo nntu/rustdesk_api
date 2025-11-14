@@ -432,10 +432,10 @@ class TokenService(BaseService):
         :return: 令牌
         """
         assert client_type in [1, 2, 3]
-        username = self.get_user_info(username)
+        user_qs = self.get_user_info(username)
         token = f"{get_randem_md5()}_{username}"
 
-        if qs := self.db.objects.filter(username=username, uuid=uuid, client_type=client_type).first():
+        if qs := self.db.objects.filter(username=user_qs, uuid=uuid, client_type=client_type).first():
             qs.token = token
             qs.created_at = get_local_time()
             qs.last_used_at = get_local_time()
@@ -443,7 +443,7 @@ class TokenService(BaseService):
             logger.info(f"更新令牌: user: {username} uuid: {uuid} token: {token}")
         else:
             self.db.objects.create(
-                username=self.get_user_info(username),
+                username=user_qs,
                 uuid=uuid,
                 token=token,
                 client_type=client_type,
@@ -824,10 +824,10 @@ class PersonalService(BaseService):
     db = Personal
 
     def create_personal(self, personal_name, create_user, personal_type="public"):
-        create_user = self.get_user_info(create_user)
+        qs = self.get_user_info(create_user)
         personal = self.db.objects.create(
             personal_name=personal_name,
-            create_user=create_user,
+            create_user=qs,
             personal_type=personal_type,
         )
         personal.personal_user.create(user=create_user)
@@ -837,10 +837,10 @@ class PersonalService(BaseService):
         return personal
 
     def create_self_personal(self, username):
-        username = self.get_user_info(username)
+        qs = self.get_user_info(username)
         personal = self.create_personal(
-            personal_name=f'{username.username}_personal',
-            create_user=username,
+            personal_name=f'{username}_personal',
+            create_user=qs,
             personal_type="private"
         )
         return personal
@@ -860,16 +860,16 @@ class PersonalService(BaseService):
         return None
 
     def add_personal_to_user(self, guid, username):
-        user = self.get_user_info(username)
-        res = self.get_personal(guid=guid).personal_user.create(username=user)
+        user_qs = self.get_user_info(username)
+        res = self.get_personal(guid=guid).personal_user.create(username=user_qs)
         logger.info(f'分享地址簿给用户: {guid} - {username}')
         return res
 
     def del_personal_to_user(self, guid, username):
-        username = self.get_user_info(username)
+        user_qs = self.get_user_info(username)
         res = (
             self.get_personal(guid=guid)
-            .personal_user.filter(username=username)
+            .personal_user.filter(username=user_qs)
             .delete()
         )
         logger.info(f'取消分享地址簿: guid={guid}, username={username}')
