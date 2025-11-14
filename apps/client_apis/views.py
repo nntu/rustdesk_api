@@ -10,7 +10,7 @@ from apps.client_apis.common import check_login, request_debug_log, debug_reques
 from apps.db.models import PeerInfo
 from apps.db.service import HeartBeatService, PeerInfoService, TokenService, UserService, \
     LoginClientService
-from common.utils import get_local_time
+from common.utils import get_local_time, str2bool
 
 logger = logging.getLogger(__name__)
 
@@ -195,11 +195,11 @@ def users(request: HttpRequest):
     """
     page = int(request.GET.get('current', 1))
     page_size = int(request.GET.get('pageSize', 10))
-    status = int(request.GET.get('status', 1))
+    status = str2bool(request.GET.get('status') or True)
     token_service = TokenService(request=request)
     user_info = token_service.user_info
     if user_info.is_superuser:
-        result = UserService().get_list_by_status(status=status, page=page, page_size=page_size)['results']
+        result = UserService().get_list_by_status(is_active=status, page=page, page_size=page_size)['results']
     else:
         result = [user_info]
 
