@@ -978,3 +978,25 @@ class SharePersonalService(BaseService):
         ).values_list("guid", flat=True)
 
         return PersonalService.db.objects.filter(guid__in=personal_ids).all()
+
+
+class UserConfig(BaseService):
+    def __init__(self, user: User | str):
+        self.user = self.get_user_info(user)
+
+    def get_config(self):
+        return self.user.user_config.objects.all()
+
+    def set_language(self, language):
+        self.user.user_config.objects.update_or_create(
+            user=self.user,
+            defaults={
+                "config_name": 'language',
+                "config_value": language
+            }
+        )
+
+    def get_language(self):
+        if qs := self.user.user_config.objects.filter(config_name='language').first():
+            return qs.config_value
+        return None

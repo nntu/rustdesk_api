@@ -328,3 +328,10 @@ class UserConfig(models.Model):
     config_name = models.CharField(max_length=50, verbose_name='配置名称')
     config_value = models.TextField(verbose_name='配置值')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
+
+    class Meta:
+        verbose_name = '用户配置'
+        verbose_name_plural = '用户配置'
+        ordering = ['-created_at']
+        db_table = 'user_config'
+        unique_together = [['user', 'config_name']]
