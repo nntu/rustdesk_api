@@ -834,7 +834,7 @@ class PersonalService(BaseService):
         qs = self.get_user_info(create_user)
         personal = self.db.objects.create(
             personal_name=personal_name,
-            create_user=qs,
+            create_user_id=qs,
             personal_type=personal_type,
         )
         personal.personal_user.create(user=create_user)
