@@ -624,7 +624,7 @@ python manage.py collectstatic --noinput
 ## 📮 联系方式
 
 - 作者: 御风
-- Issues: [GitHub Issues](https://github.com/yourusername/rustdesk_api/issues)
+- Issues: [GitHub Issues](https://github.com/JokerYF/rustdesk_api/issues)
 
 ---
 
