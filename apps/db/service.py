@@ -952,8 +952,7 @@ class PersonalService(BaseService):
 
         # 清掉alias
         alias_service = AliasService()
-        for peer in peers:
-            alias_service.set_alias(peer_id=peer.peer_id, guid=guid, alias="")
+        alias_service.delete_alias(*peers, guid=guid)
 
         # 清掉tag
         tag_service = TagService(guid=guid, user=user)
@@ -1002,6 +1001,9 @@ class AliasService(BaseService):
             return {}
         rows = self.db.objects.filter(guid=guid, peer_id__in=peer_ids).values("peer_id", "alias")
         return {row["peer_id"]: row["alias"] for row in rows}
+
+    def delete_alias(self, *peer_ids, guid):
+        return self.db.objects.filter(guid=guid, peer_id__in=peer_ids).delete()
 
 
 class SharePersonalService(BaseService):

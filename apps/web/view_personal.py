@@ -150,7 +150,7 @@ def personal_detail(request: HttpRequest) -> JsonResponse:
     if not personal:
         return JsonResponse({'ok': False, 'err_msg': '地址簿不存在或无权限查看'}, status=404)
 
-    # 获取地址簿中的设备（通过Alias表关联）
+    # 获取地址簿中的设备（通过Alias表关联） TODO 这里后面需要改成PeerPersonal表查询数据，然后多表联查
     aliases = Alias.objects.filter(guid=personal).select_related('peer_id').order_by('-created_at')
 
     # 在线判定：心跳表 5 分钟内有记录视为在线
@@ -283,20 +283,11 @@ def remove_device_from_personal(request: HttpRequest) -> JsonResponse:
     if not personal:
         return JsonResponse({'ok': False, 'err_msg': '地址簿不存在或无权限操作'}, status=404)
 
-    # 删除别名记录
-    deleted_count = Alias.objects.filter(
-        peer_id__peer_id=peer_id,
-        guid=personal
-    ).delete()[0]
-
     PersonalService().del_peer_to_personal(
         guid=guid,
         peer_id=peer_id,
         user=request.user
     )
-
-    if deleted_count == 0:
-        return JsonResponse({'ok': False, 'err_msg': '设备不在该地址簿中'}, status=404)
 
     return JsonResponse({'ok': True})
 
