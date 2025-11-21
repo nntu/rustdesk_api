@@ -150,15 +150,21 @@ def personal_detail(request: HttpRequest) -> JsonResponse:
     if not personal:
         return JsonResponse({'ok': False, 'err_msg': '地址簿不存在或无权限查看'}, status=404)
 
-    # 获取地址簿中的设备（通过Alias表关联） TODO 这里后面需要改成PeerPersonal表查询数据，然后多表联查
-    aliases = Alias.objects.filter(guid=personal).select_related('peer_id').order_by('-created_at')
+    personal_service = PersonalService()
+    peers = personal_service.get_peers_by_personal(guid=guid)
 
     # 在线判定：心跳表 5 分钟内有记录视为在线
     online_threshold = timezone.now() - timedelta(minutes=5)
 
     devices = []
-    for alias in aliases:
-        peer = alias.peer_id
+    # 获取所有peer的ID列表
+    peer_ids = [peer_info.peer.peer_id for peer_info in peers]
+
+    # 使用AliasService批量获取别名映射
+    alias_map = AliasService().get_alias_map(guid=guid, peer_ids=peer_ids)
+    
+    for peer_info in peers:
+        peer = peer_info.peer
         # 检查在线状态
         is_online = HeartBeat.objects.filter(
             Q(peer_id=peer.peer_id) | Q(uuid=peer.uuid),
@@ -171,7 +177,7 @@ def personal_detail(request: HttpRequest) -> JsonResponse:
 
         devices.append({
             'peer_id': peer.peer_id,
-            'alias': alias.alias,
+            'alias': alias_map.get(peer.peer_id, ''),  # 使用别名映射获取别名
             'tags': tags,
             'device_name': peer.device_name,
             'os': peer.os,

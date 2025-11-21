@@ -917,6 +917,12 @@ class PersonalService(BaseService):
     def get_all_personal(self):
         return self.db.objects.all()
 
+    def get_peers_by_personal(self, guid):
+        personal = self.get_personal(guid=guid)
+        if personal:
+            return personal.personal_peer.all()
+        return []
+
     def delete_personal(self, guid):
         personal = self.get_personal(guid=guid)
         if personal and personal.personal_type != "private":
