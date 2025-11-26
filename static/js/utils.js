@@ -1,0 +1,138 @@
+/**
+ * 工具函数模块
+ *
+ * 包含通用的辅助函数：Toast提示、错误处理、Cookie操作等
+ */
+
+(function (window) {
+    'use strict';
+
+    const APP = window.APP || {};
+
+    /**
+     * 获取Toast容器
+     *
+     * :returns: Toast容器DOM元素
+     * :rtype: HTMLElement
+     */
+    function getToastContainer() {
+        let c = document.querySelector('.toast-container');
+        if (!c) {
+            c = document.createElement('div');
+            c.className = 'toast-container';
+            document.body.appendChild(c);
+        }
+        return c;
+    }
+
+    /**
+     * 显示Toast提示
+     *
+     * :param {string} message: 提示消息
+     * :param {string} type: 提示类型（error|success|info）
+     * :param {number} timeoutMs: 显示时长（毫秒）
+     * :returns: 无
+     * :rtype: void
+     */
+    function showToast(message, type = 'error', timeoutMs = 3000) {
+        const container = getToastContainer();
+        const div = document.createElement('div');
+        const kind = (type === 'success' || type === 'info') ? type : 'error';
+        div.className = `toast toast--${kind}`;
+        div.textContent = message || '发生错误';
+        container.appendChild(div);
+        requestAnimationFrame(() => div.classList.add('toast--show'));
+        setTimeout(() => {
+            div.classList.remove('toast--show');
+            setTimeout(() => div.remove(), 200);
+        }, timeoutMs);
+    }
+
+    /**
+     * 解码消息文本
+     *
+     * :param {string} raw: 原始文本
+     * :param {string} fallbackText: 备用文本
+     * :returns: 解码后的文本
+     * :rtype: string
+     */
+    function decodeMessage(raw, fallbackText = '发生错误') {
+        let msg = String(raw || '').trim();
+        if (!msg) return fallbackText;
+        if (msg[0] === '{' || msg[0] === '[') {
+            try {
+                const data = JSON.parse(msg);
+                msg = String((data && (data.err_msg || data.error || data.message || data.detail)) || '').trim() || fallbackText;
+            } catch (e) {
+            }
+        }
+        if (/%[0-9A-Fa-f]{2}/.test(msg)) {
+            try {
+                msg = decodeURIComponent(msg);
+            } catch (e) {
+            }
+        }
+        try {
+            const ta = document.createElement('textarea');
+            ta.innerHTML = msg;
+            msg = ta.value || ta.textContent || msg;
+        } catch (e) {
+        }
+        msg = String(msg || '').trim();
+        return msg || fallbackText;
+    }
+
+    /**
+     * 解析请求错误
+     *
+     * :param {Response} resp: Fetch Response对象
+     * :returns: Promise that rejects with Error
+     * :rtype: Promise
+     */
+    function parseFetchError(resp) {
+        const statusText = `HTTP ${resp.status}`;
+        return resp.clone().json().then(d => {
+            const msg = (d && (d.err_msg || d.error || d.message || d.detail)) ? String(d.err_msg || d.error || d.message || d.detail) : statusText;
+            throw new Error(decodeMessage(msg, statusText));
+        }).catch(() => {
+            return resp.clone().text().then(t => {
+                const txt = (t || '').trim();
+                throw new Error(decodeMessage(txt, statusText));
+            });
+        });
+    }
+
+    /**
+     * 从Cookie中获取指定键的值
+     *
+     * :param {string} name: Cookie名称
+     * :returns: Cookie值或null
+     * :rtype: string|null
+     */
+    function getCookie(name) {
+        let val = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const c = cookies[i].trim();
+                if (c.substring(0, name.length + 1) === (name + '=')) {
+                    val = decodeURIComponent(c.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return val;
+    }
+
+    // 导出到全局
+    APP.utils = {
+        showToast,
+        decodeMessage,
+        parseFetchError,
+        getCookie
+    };
+
+    window.APP = APP;
+
+})(window);
+
