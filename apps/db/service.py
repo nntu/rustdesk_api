@@ -817,7 +817,7 @@ class AuditConnService(BaseService):
                     conn_id=conn_id,
                     action=action,
                     controlled_uuid=controlled_uuid,
-                    controller_uuid=connect_log.controlled_uuid,
+                    controller_uuid=connect_log.controller_uuid,
                     initiating_ip=connect_log.initiating_ip,
                     session_id=session_id,
                     user_id=connect_log.user_id,
