@@ -66,7 +66,7 @@ def sysinfo(request: HttpRequest):
         device_name=body.get('hostname'),
         memory=body.get('memory'),
         os=body.get('os'),
-        username=body.get('username'),
+        username=body.get('username') or body.get('hostname'),
         version=body.get('version'),
     )
 
