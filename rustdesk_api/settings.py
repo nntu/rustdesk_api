@@ -160,3 +160,10 @@ SESSION_COOKIE_AGE = PublicConfig.SESSION_TIMEOUT  # session失效时间
 SESSION_SAVE_EVERY_REQUEST = True
 # 浏览器关闭即失效，True 表示不设置持久化过期时间，让浏览器会话结束即删除
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+
+# RustDesk Server Configuration
+# Client sẽ dùng cấu hình này để kết nối đến ID/Relay server
+RUSTDESK_ID_SERVER = os.getenv('RUSTDESK_API_RUSTDESK_ID_SERVER', '')
+RUSTDESK_RELAY_SERVER = os.getenv('RUSTDESK_API_RUSTDESK_RELAY_SERVER', '')
+RUSTDESK_API_SERVER = os.getenv('RUSTDESK_API_RUSTDESK_API_SERVER', '')
+RUSTDESK_KEY = os.getenv('RUSTDESK_API_RUSTDESK_KEY', '')

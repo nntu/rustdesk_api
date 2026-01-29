@@ -6,6 +6,7 @@ urlpatterns = [
     path('heartbeat', views.heartbeat),
     path('sysinfo', views.sysinfo),
     path('record', views.record),
+    path('login-options', views.login_options),
     path('login', views.login),
     path('logout', views.logout),
     path('currentUser', views.current_user),

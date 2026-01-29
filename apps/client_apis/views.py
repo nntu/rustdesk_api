@@ -175,6 +175,21 @@ def login(request: HttpRequest):
 
 @request_debug_log
 @require_http_methods(["POST"])
+def login_options(request: HttpRequest):
+    """
+    Trả về cấu hình RustDesk server cho client.
+    Client cần thông tin này để kết nối đến ID/Relay server.
+    """
+    return JsonResponse({
+        'id_server': getattr(settings, 'RUSTDESK_ID_SERVER', ''),
+        'relay_server': getattr(settings, 'RUSTDESK_RELAY_SERVER', ''),
+        'api_server': getattr(settings, 'RUSTDESK_API_SERVER', ''),
+        'key': getattr(settings, 'RUSTDESK_KEY', ''),
+    })
+
+
+@request_debug_log
+@require_http_methods(["POST"])
 @check_login
 def logout(request: HttpRequest):
     token_service = TokenService(request=request)
