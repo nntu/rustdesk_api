@@ -69,7 +69,7 @@
             const isOnline = !!(statusMap[pid] && statusMap[pid].is_online);
             el.classList.toggle('online', isOnline);
             el.classList.toggle('offline', !isOnline);
-            el.textContent = isOnline ? '在线' : '离线';
+            el.textContent = isOnline ? 'Trực tuyến' : 'Ngoại tuyến';
         });
     }
 
@@ -98,7 +98,7 @@
             },
             signal: INFLIGHT_CONTROLLER.signal
         }).then(resp => {
-            if (!resp.ok) throw new Error('请求失败');
+            if (!resp.ok) throw new Error('Yêu cầu thất bại');
             return resp.json();
         }).then(data => {
             if (!data || data.ok !== true) return;
@@ -219,26 +219,26 @@
         const tags = Array.isArray(detail.tags) ? detail.tags.join(', ') : (detail.tags || '');
         return (
             '<dl style="margin:0;">' +
-            '<div style="display:flex;gap:8px;margin:6px 0;align-items:center;"><dt style="min-width:88px;color:#6a737d;">设备ID</dt><dd style="margin:0;flex:1;">' + (detail.peer_id || '-') + '</dd></div>' +
-            '<div style="display:flex;gap:8px;margin:6px 0;align-items:center;"><dt style="min-width:88px;color:#6a737d;">用户名</dt><dd style="margin:0;flex:1;">' + (detail.username || '-') + '</dd></div>' +
-            '<div style="display:flex;gap:8px;margin:6px 0;align-items:center;"><dt style="min-width:88px;color:#6a737d;">主机名</dt><dd style="margin:0;flex:1;">' + (detail.hostname || '-') + '</dd></div>' +
-            '<div style="display:flex;gap:8px;margin:6px 0;align-items:center;"><dt style="min-width:88px;color:#6a737d;">设备别名</dt>' +
+            '<div style="display:flex;gap:8px;margin:6px 0;align-items:center;"><dt style="min-width:88px;color:#6a737d;">ID thiết bị</dt><dd style="margin:0;flex:1;">' + (detail.peer_id || '-') + '</dd></div>' +
+            '<div style="display:flex;gap:8px;margin:6px 0;align-items:center;"><dt style="min-width:88px;color:#6a737d;">Tên người dùng</dt><dd style="margin:0;flex:1;">' + (detail.username || '-') + '</dd></div>' +
+            '<div style="display:flex;gap:8px;margin:6px 0;align-items:center;"><dt style="min-width:88px;color:#6a737d;">Tên máy chủ</dt><dd style="margin:0;flex:1;">' + (detail.hostname || '-') + '</dd></div>' +
+            '<div style="display:flex;gap:8px;margin:6px 0;align-items:center;"><dt style="min-width:88px;color:#6a737d;">Tên gợi nhớ thiết bị</dt>' +
             '<dd id="nav2-detail-alias" style="margin:0;flex:1;" data-original="' + (detail.alias || '') + '">' +
             '<span class="nav2-detail-text">' + (detail.alias || '-') + '</span> ' +
-            '<button type="button" class="nav2-link nav2-edit-btn" data-field="alias" data-peer="' + (detail.peer_id || '') + '" aria-label="编辑别名">' +
+            '<button type="button" class="nav2-link nav2-edit-btn" data-field="alias" data-peer="' + (detail.peer_id || '') + '" aria-label="Chỉnh sửa tên gợi nhớ">' +
             '<img src="' + ICONS.EDIT + '" width="16" height="16" alt="" aria-hidden="true">' +
             '</button>' +
             '</dd>' +
             '</div>' +
-            '<div style="display:flex;gap:8px;margin:6px 0;align-items:center;"><dt style="min-width:88px;color:#6a737d;">设备标签</dt>' +
+            '<div style="display:flex;gap:8px;margin:6px 0;align-items:center;"><dt style="min-width:88px;color:#6a737d;">Thẻ thiết bị</dt>' +
             '<dd id="nav2-detail-tags" style="margin:0;flex:1;" data-original="' + (tags || '') + '">' +
             '<span class="nav2-detail-text">' + (tags || '-') + '</span> ' +
-            '<button type="button" class="nav2-link nav2-edit-btn" data-field="tags" data-peer="' + (detail.peer_id || '') + '" aria-label="编辑标签">' +
+            '<button type="button" class="nav2-link nav2-edit-btn" data-field="tags" data-peer="' + (detail.peer_id || '') + '" aria-label="Chỉnh sửa thẻ">' +
             '<img src="' + ICONS.EDIT + '" width="16" height="16" alt="" aria-hidden="true">' +
             '</button>' +
             '</dd>' +
             '</div>' +
-            '<div style="display:flex;gap:8px;margin:6px 0;align-items:center;"><dt style="min-width:88px;color:#6a737d;">平台</dt><dd style="margin:0;flex:1;">' + (detail.platform || '-') + '</dd></div>' +
+            '<div style="display:flex;gap:8px;margin:6px 0;align-items:center;"><dt style="min-width:88px;color:#6a737d;">Nền tảng</dt><dd style="margin:0;flex:1;">' + (detail.platform || '-') + '</dd></div>' +
             '</dl>'
         );
     }
@@ -254,7 +254,7 @@
         const {URLS} = getConstants();
         const {open: openModal} = getModal();
         const bodyEl = document.getElementById('nav2-modal-body');
-        if (bodyEl) bodyEl.innerHTML = '<div style="color:#6a737d;">加载中...</div>';
+        if (bodyEl) bodyEl.innerHTML = '<div style="color:#6a737d;">Đang tải...</div>';
         openModal('nav2-modal-root');
         const params = new URLSearchParams({peer_id: peerId});
         fetch(`${URLS.DEVICE_DETAIL}?${params.toString()}`, {
@@ -262,14 +262,14 @@
             credentials: 'same-origin',
             headers: {'X-Requested-With': 'XMLHttpRequest'}
         }).then(resp => {
-            if (!resp.ok) throw new Error('请求失败');
+            if (!resp.ok) throw new Error('Yêu cầu thất bại');
             return resp.json();
         }).then(data => {
-            if (!data || data.ok !== true) throw new Error((data && (data.err_msg || data.error)) || '加载失败');
+            if (!data || data.ok !== true) throw new Error((data && (data.err_msg || data.error)) || 'Tải thất bại');
             const html = renderDetailHTML(data.data || {});
             if (bodyEl) bodyEl.innerHTML = html;
         }).catch(err => {
-            if (bodyEl) bodyEl.innerHTML = '<div style="color:#b91c1c;">' + (err.message || '加载失败') + '</div>';
+            if (bodyEl) bodyEl.innerHTML = '<div style="color:#b91c1c;">' + (err.message || 'Tải thất bại') + '</div>';
         });
     }
 
@@ -284,7 +284,7 @@
      */
     function startInlineEdit(containerEl, field, peerId) {
         const {ICONS} = getConstants();
-        const placeholder = field === 'alias' ? '请输入设备别名' : '用逗号分隔多个标签';
+        const placeholder = field === 'alias' ? 'Nhập tên gợi nhớ thiết bị' : 'Phân cách nhiều thẻ bằng dấu phẩy';
         const isInlineCell = containerEl.hasAttribute('data-inline-field');
         const original = containerEl.getAttribute('data-original')
             || (containerEl.querySelector('.nav2-detail-text')?.textContent || '')
@@ -298,10 +298,10 @@
             pop.innerHTML =
                 '<input type="text" class="nav2-input" value="' + value + '" ' +
                 'data-field="' + field + '" data-peer="' + peerId + '" placeholder="' + placeholder + '" /> ' +
-                '<button type="button" class="nav2-link nav2-edit-confirm" data-field="' + field + '" data-peer="' + peerId + '" aria-label="确认">' +
+                '<button type="button" class="nav2-link nav2-edit-confirm" data-field="' + field + '" data-peer="' + peerId + '" aria-label="Xác nhận">' +
                 '<img src="' + ICONS.CONFIRM + '" width="16" height="16" alt="" aria-hidden="true">' +
                 '</button> ' +
-                '<button type="button" class="nav2-link nav2-edit-cancel" data-field="' + field + '" data-peer="' + peerId + '" aria-label="取消">' +
+                '<button type="button" class="nav2-link nav2-edit-cancel" data-field="' + field + '" data-peer="' + peerId + '" aria-label="Hủy">' +
                 '<img src="' + ICONS.CANCEL + '" width="16" height="16" alt="" aria-hidden="true">' +
                 '</button>';
             containerEl.appendChild(pop);
@@ -316,10 +316,10 @@
         containerEl.innerHTML =
             '<input type="text" class="nav2-input" style="min-width:200px;" value="' + value + '" ' +
             'data-field="' + field + '" data-peer="' + peerId + '" placeholder="' + placeholder + '" /> ' +
-            '<button type="button" class="nav2-link nav2-edit-confirm" data-field="' + field + '" data-peer="' + peerId + '" aria-label="确认">' +
+            '<button type="button" class="nav2-link nav2-edit-confirm" data-field="' + field + '" data-peer="' + peerId + '" aria-label="Xác nhận">' +
             '<img src="' + ICONS.CONFIRM + '" width="16" height="16" alt="" aria-hidden="true">' +
             '</button> ' +
-            '<button type="button" class="nav2-link nav2-edit-cancel" data-field="' + field + '" data-peer="' + peerId + '" aria-label="取消">' +
+            '<button type="button" class="nav2-link nav2-edit-cancel" data-field="' + field + '" data-peer="' + peerId + '" aria-label="Hủy">' +
             '<img src="' + ICONS.CANCEL + '" width="16" height="16" alt="" aria-hidden="true">' +
             '</button>';
     }
@@ -360,7 +360,7 @@
             if (!resp.ok) return parseFetchError(resp);
             return resp.json();
         }).then(data => {
-            if (!data || data.ok !== true) throw new Error((data && (data.err_msg || data.error)) || '保存失败');
+            if (!data || data.ok !== true) throw new Error((data && (data.err_msg || data.error)) || 'Lưu thất bại');
             const inModal = !!ddEl.closest('#nav2-modal-root');
             if (inModal) {
                 fetchAndShowDetail(peerId);
@@ -372,7 +372,7 @@
             } catch (e) {
             }
         }).catch(err => {
-            showToast(err.message || '保存失败，请稍后重试', 'error');
+            showToast(err.message || 'Lưu thất bại, vui lòng thử lại sau', 'error');
         });
     }
 
@@ -395,7 +395,7 @@
         const peerAttr = containerEl.getAttribute('data-peer') || '';
         containerEl.innerHTML =
             '<span class="nav2-detail-text">' + (original || '-') + '</span> ' +
-            '<button type="button" class="nav2-link nav2-edit-btn" data-field="' + field + '" data-peer="' + peerAttr + '" aria-label="编辑">' +
+            '<button type="button" class="nav2-link nav2-edit-btn" data-field="' + field + '" data-peer="' + peerAttr + '" aria-label="Chỉnh sửa">' +
             '<img src="' + ICONS.EDIT + '" width="16" height="16" alt="" aria-hidden="true">' +
             '</button>';
     }

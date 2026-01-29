@@ -261,7 +261,7 @@
             const peerId = (fd.get('peer_id') || '').trim();
             const alias = (fd.get('alias') || '').trim();
             if (!peerId || !alias) {
-                showToast('请输入有效的别名', 'error');
+                showToast('Vui lòng nhập tên gợi nhớ hợp lệ', 'error');
                 return;
             }
             const csrf = getCookie('csrftoken');
@@ -282,7 +282,7 @@
                 return resp.json();
             }).then(data => {
                 if (!data || data.ok !== true) {
-                    throw new Error((data && (data.err_msg || data.error)) ? (data.err_msg || data.error) : '重命名失败');
+                    throw new Error((data && (data.err_msg || data.error)) ? (data.err_msg || data.error) : 'Đổi tên thất bại');
                 }
                 closeModal('nav2-rename-root');
                 const extra = collectQueryOptions(document.getElementById('nav2-search-form'));
@@ -292,7 +292,7 @@
                 } catch (e) {
                 }
             }).catch(err => {
-                showToast(err.message || '重命名失败，请稍后重试', 'error');
+                showToast(err.message || 'Đổi tên thất bại, vui lòng thử lại sau', 'error');
             });
         }, false);
 
@@ -396,7 +396,7 @@
                 if (p2) p2.value = '';
                 openModal('nav3-reset-root');
             } else if (action === 'delete') {
-                if (!confirm(`确定要删除用户"${username}"吗？删除后该用户将无法登录。`)) return;
+                if (!confirm(`Bạn có chắc chắn muốn xóa người dùng "${username}" không? Sau khi xóa, người dùng này sẽ không thể đăng nhập.`)) return;
                 const csrf = getCookie('csrftoken');
                 const body = new URLSearchParams();
                 body.set('username', username);
@@ -413,8 +413,8 @@
                     if (!resp.ok) return parseFetchError(resp);
                     return resp.json();
                 }).then(data => {
-                    if (!data || data.ok !== true) throw new Error((data && (data.err_msg || data.error)) || '删除失败');
-                    showToast('删除成功', 'success');
+                    if (!data || data.ok !== true) throw new Error((data && (data.err_msg || data.error)) || 'Xóa thất bại');
+                    showToast('Xóa thành công', 'success');
                     const {collectQueryOptions} = getNav3();
                     const extra = collectQueryOptions(document.getElementById('nav3-search-form'));
                     renderContent('nav-3', extra);
@@ -423,7 +423,7 @@
                     } catch (e) {
                     }
                 }).catch(err => {
-                    showToast(err.message || '删除失败，请稍后重试', 'error');
+                    showToast(err.message || 'Xóa thất bại, vui lòng thử lại sau', 'error');
                 });
             }
         }, false);
@@ -439,7 +439,7 @@
             const email = (fd.get('email') || '').trim();
             const isStaff = formEl.querySelector('#nav3-edit-is-staff')?.checked ? '1' : '0';
             if (!username) {
-                showToast('用户名无效', 'error');
+                showToast('Tên người dùng không hợp lệ', 'error');
                 return;
             }
             const csrf = getCookie('csrftoken');
@@ -461,7 +461,7 @@
                 if (!resp.ok) return parseFetchError(resp);
                 return resp.json();
             }).then(data => {
-                if (!data || data.ok !== true) throw new Error((data && (data.err_msg || data.error)) || '保存失败');
+                if (!data || data.ok !== true) throw new Error((data && (data.err_msg || data.error)) || 'Lưu thất bại');
                 closeModal('nav3-edit-root');
                 const {collectQueryOptions} = getNav3();
                 const extra = collectQueryOptions(document.getElementById('nav3-search-form'));
@@ -471,7 +471,7 @@
                 } catch (e) {
                 }
             }).catch(err => {
-                showToast(err.message || '保存失败，请稍后重试', 'error');
+                showToast(err.message || 'Lưu thất bại, vui lòng thử lại sau', 'error');
             });
         }, false);
 
@@ -485,11 +485,11 @@
             const p1 = (fd.get('password1') || '').trim();
             const p2 = (fd.get('password2') || '').trim();
             if (!username || !p1 || !p2) {
-                showToast('请输入完整信息', 'error');
+                showToast('Vui lòng nhập đầy đủ thông tin', 'error');
                 return;
             }
             if (p1 !== p2) {
-                showToast('两次密码不一致', 'error');
+                showToast('Mật khẩu nhập lại không khớp', 'error');
                 return;
             }
             const csrf = getCookie('csrftoken');
@@ -510,7 +510,7 @@
                 if (!resp.ok) return parseFetchError(resp);
                 return resp.json();
             }).then(data => {
-                if (!data || data.ok !== true) throw new Error((data && (data.err_msg || data.error)) || '重置失败');
+                if (!data || data.ok !== true) throw new Error((data && (data.err_msg || data.error)) || 'Đặt lại thất bại');
                 closeModal('nav3-reset-root');
                 const {collectQueryOptions} = getNav3();
                 const extra = collectQueryOptions(document.getElementById('nav3-search-form'));
@@ -520,7 +520,7 @@
                 } catch (e) {
                 }
             }).catch(err => {
-                showToast(err.message || '重置失败，请稍后重试', 'error');
+                showToast(err.message || 'Đặt lại thất bại, vui lòng thử lại sau', 'error');
             });
         }, false);
 
@@ -547,15 +547,15 @@
             const p2 = (fd.get('password2') || '').trim();
             const isStaff = formEl.querySelector('#nav3-create-is-staff')?.checked ? '1' : '0';
             if (!username || !p1 || !p2) {
-                showToast('用户名和密码不能为空', 'error');
+                showToast('Tên người dùng và mật khẩu không được để trống', 'error');
                 return;
             }
             if (p1 !== p2) {
-                showToast('两次密码不一致', 'error');
+                showToast('Mật khẩu nhập lại không khớp', 'error');
                 return;
             }
             if (p1.length < 6) {
-                showToast('密码长度至少为6位', 'error');
+                showToast('Độ dài mật khẩu ít nhất 6 ký tự', 'error');
                 return;
             }
             const csrf = getCookie('csrftoken');
@@ -579,8 +579,8 @@
                 if (!resp.ok) return parseFetchError(resp);
                 return resp.json();
             }).then(data => {
-                if (!data || data.ok !== true) throw new Error((data && (data.err_msg || data.error)) || '创建失败');
-                showToast('用户创建成功', 'success');
+                if (!data || data.ok !== true) throw new Error((data && (data.err_msg || data.error)) || 'Tạo thất bại');
+                showToast('Tạo người dùng thành công', 'success');
                 closeModal('nav3-create-root');
                 const {collectQueryOptions} = getNav3();
                 const extra = collectQueryOptions(document.getElementById('nav3-search-form'));
@@ -590,7 +590,7 @@
                 } catch (e) {
                 }
             }).catch(err => {
-                showToast(err.message || '创建失败，请稍后重试', 'error');
+                showToast(err.message || 'Tạo thất bại, vui lòng thử lại sau', 'error');
             });
         }, false);
 
@@ -665,7 +665,7 @@
             const personalName = (fd.get('personal_name') || '').trim();
             const personalType = (fd.get('personal_type') || '').trim();
             if (!personalName) {
-                showToast('请输入地址簿名称', 'error');
+                showToast('Vui lòng nhập tên danh bạ', 'error');
                 return;
             }
             const csrf = getCookie('csrftoken');
@@ -685,18 +685,18 @@
                 if (!resp.ok) return parseFetchError(resp);
                 return resp.json();
             }).then(data => {
-                if (!data || data.ok !== true) throw new Error((data && (data.err_msg || data.error)) || '创建失败');
+                if (!data || data.ok !== true) throw new Error((data && (data.err_msg || data.error)) || 'Tạo thất bại');
                 closeModal('nav4-create-root');
                 const {collectQueryOptions} = getNav4();
                 const extra = collectQueryOptions(document.getElementById('nav4-search-form'));
                 renderContent('nav-4', extra);
-                showToast('创建成功', 'success');
+                showToast('Tạo thành công', 'success');
                 try {
                     localStorage.setItem(STORAGE_KEY, 'nav-4');
                 } catch (e) {
                 }
             }).catch(err => {
-                showToast(err.message || '创建失败，请稍后重试', 'error');
+                showToast(err.message || 'Tạo thất bại, vui lòng thử lại sau', 'error');
             });
         }, false);
 
@@ -728,7 +728,7 @@
                 }
                 openModal('nav4-rename-root');
             } else if (action === 'delete') {
-                if (!confirm(`确定要删除地址簿"${name}"吗？删除后将无法恢复。`)) return;
+                if (!confirm(`Bạn có chắc chắn muốn xóa danh bạ "${name}" không? Sau khi xóa sẽ không thể khôi phục.`)) return;
                 const csrf = getCookie('csrftoken');
                 const body = new URLSearchParams();
                 body.set('guid', guid);
@@ -745,17 +745,17 @@
                     if (!resp.ok) return parseFetchError(resp);
                     return resp.json();
                 }).then(data => {
-                    if (!data || data.ok !== true) throw new Error((data && (data.err_msg || data.error)) || '删除失败');
+                    if (!data || data.ok !== true) throw new Error((data && (data.err_msg || data.error)) || 'Xóa thất bại');
                     const {collectQueryOptions} = getNav4();
                     const extra = collectQueryOptions(document.getElementById('nav4-search-form'));
                     renderContent('nav-4', extra);
-                    showToast('删除成功', 'success');
+                    showToast('Xóa thành công', 'success');
                     try {
                         localStorage.setItem(STORAGE_KEY, 'nav-4');
                     } catch (e) {
                     }
                 }).catch(err => {
-                    showToast(err.message || '删除失败，请稍后重试', 'error');
+                    showToast(err.message || 'Xóa thất bại, vui lòng thử lại sau', 'error');
                 });
             }
         }, false);
@@ -769,7 +769,7 @@
             const guid = (fd.get('guid') || '').trim();
             const newName = (fd.get('new_name') || '').trim();
             if (!guid || !newName) {
-                showToast('请输入新名称', 'error');
+                showToast('Vui lòng nhập tên mới', 'error');
                 return;
             }
             const csrf = getCookie('csrftoken');
@@ -789,18 +789,18 @@
                 if (!resp.ok) return parseFetchError(resp);
                 return resp.json();
             }).then(data => {
-                if (!data || data.ok !== true) throw new Error((data && (data.err_msg || data.error)) || '重命名失败');
+                if (!data || data.ok !== true) throw new Error((data && (data.err_msg || data.error)) || 'Đổi tên thất bại');
                 closeModal('nav4-rename-root');
                 const {collectQueryOptions} = getNav4();
                 const extra = collectQueryOptions(document.getElementById('nav4-search-form'));
                 renderContent('nav-4', extra);
-                showToast('重命名成功', 'success');
+                showToast('Đổi tên thành công', 'success');
                 try {
                     localStorage.setItem(STORAGE_KEY, 'nav-4');
                 } catch (e) {
                 }
             }).catch(err => {
-                showToast(err.message || '重命名失败，请稍后重试', 'error');
+                showToast(err.message || 'Đổi tên thất bại, vui lòng thử lại sau', 'error');
             });
         }, false);
 
@@ -812,7 +812,7 @@
             const guid = btn.getAttribute('data-guid') || '';
             const peerId = btn.getAttribute('data-peer-id') || '';
             if (!guid || !peerId) return;
-            if (!confirm('确定要从地址簿中移除该设备吗？')) return;
+            if (!confirm('Bạn có chắc chắn muốn gỡ thiết bị này khỏi danh bạ không?')) return;
             const csrf = getCookie('csrftoken');
             const body = new URLSearchParams();
             body.set('guid', guid);
@@ -830,16 +830,16 @@
                 if (!resp.ok) return parseFetchError(resp);
                 return resp.json();
             }).then(data => {
-                if (!data || data.ok !== true) throw new Error((data && (data.err_msg || data.error)) || '移除失败');
+                if (!data || data.ok !== true) throw new Error((data && (data.err_msg || data.error)) || 'Gỡ bỏ thất bại');
                 const {
                     collectQueryOptions: collectQueryOptions4,
                     fetchAndShowDetail: fetchAndShowDetail4,
                     startInlineEdit: startInlineEdit4
                 } = getNav4();
                 fetchAndShowDetail(guid);
-                showToast('移除成功', 'success');
+                showToast('Gỡ bỏ thành công', 'success');
             }).catch(err => {
-                showToast(err.message || '移除失败，请稍后重试', 'error');
+                showToast(err.message || 'Gỡ bỏ thất bại, vui lòng thử lại sau', 'error');
             });
         }, false);
 
@@ -872,7 +872,7 @@
                 const alias = document.getElementById('nav2-add-to-book-alias').value.trim();
 
                 if (!guid) {
-                    showToast('请选择地址簿', 'error');
+                    showToast('Vui lòng chọn danh bạ', 'error');
                     return;
                 }
 
@@ -897,11 +897,11 @@
                     if (!resp.ok) return parseFetchError(resp);
                     return resp.json();
                 }).then(data => {
-                    if (!data || data.ok !== true) throw new Error((data && (data.err_msg || data.error)) || '添加失败');
-                    showToast('添加成功', 'success');
+                    if (!data || data.ok !== true) throw new Error((data && (data.err_msg || data.error)) || 'Thêm thất bại');
+                    showToast('Thêm thành công', 'success');
                     closeModal('nav2-add-to-book-root');
                 }).catch(err => {
-                    showToast(err.message || '添加失败，请稍后重试', 'error');
+                    showToast(err.message || 'Thêm thất bại, vui lòng thử lại sau', 'error');
                 });
             });
         }

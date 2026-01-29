@@ -58,45 +58,45 @@
         let devicesHtml = '';
         if (detail.devices && detail.devices.length > 0) {
             devicesHtml = '<table class="nav2-table" style="margin-top:16px;"><thead><tr>' +
-                '<th>设备ID</th><th>别名</th><th>标签</th><th>设备名</th><th>系统</th><th>状态</th><th>操作</th>' +
+                '<th>ID thiết bị</th><th>Tên gợi nhớ</th><th>Thẻ</th><th>Tên thiết bị</th><th>Hệ thống</th><th>Trạng thái</th><th>Thao tác</th>' +
                 '</tr></thead><tbody>';
             detail.devices.forEach(d => {
                 const statusClass = d.is_online ? 'online' : 'offline';
-                const statusText = d.is_online ? '在线' : '离线';
+                const statusText = d.is_online ? 'Trực tuyến' : 'Ngoại tuyến';
                 const tags = Array.isArray(d.tags) ? d.tags.join(', ') : (d.tags || '');
                 devicesHtml += '<tr data-guid="' + detail.guid + '" data-peer-id="' + d.peer_id + '">' +
                     '<td>' + (d.peer_id || '-') + '</td>' +
                     '<td class="nav4-editable-cell" data-field="alias" data-guid="' + detail.guid + '" data-peer-id="' + d.peer_id + '" data-original="' + (d.alias || '') + '">' +
                     '<span class="nav2-detail-text">' + (d.alias || '-') + '</span> ' +
-                    '<button type="button" class="nav2-link nav4-edit-btn" data-field="alias" data-guid="' + detail.guid + '" data-peer-id="' + d.peer_id + '" aria-label="编辑别名">' +
+                    '<button type="button" class="nav2-link nav4-edit-btn" data-field="alias" data-guid="' + detail.guid + '" data-peer-id="' + d.peer_id + '" aria-label="Chỉnh sửa tên gợi nhớ">' +
                     '<img src="' + ICONS.EDIT + '" width="16" height="16" alt="" aria-hidden="true">' +
                     '</button>' +
                     '</td>' +
                     '<td class="nav4-editable-cell" data-field="tags" data-guid="' + detail.guid + '" data-peer-id="' + d.peer_id + '" data-original="' + (tags || '') + '">' +
                     '<span class="nav2-detail-text">' + (tags || '-') + '</span> ' +
-                    '<button type="button" class="nav2-link nav4-edit-btn" data-field="tags" data-guid="' + detail.guid + '" data-peer-id="' + d.peer_id + '" aria-label="编辑标签">' +
+                    '<button type="button" class="nav2-link nav4-edit-btn" data-field="tags" data-guid="' + detail.guid + '" data-peer-id="' + d.peer_id + '" aria-label="Chỉnh sửa thẻ">' +
                     '<img src="' + ICONS.EDIT + '" width="16" height="16" alt="" aria-hidden="true">' +
                     '</button>' +
                     '</td>' +
                     '<td>' + (d.device_name || '-') + '</td>' +
                     '<td>' + (d.os || '-') + '</td>' +
                     '<td><span class="nav2-status ' + statusClass + '">' + statusText + '</span></td>' +
-                    '<td><button type="button" class="nav2-link nav4-remove-device-btn" data-guid="' + detail.guid + '" data-peer-id="' + d.peer_id + '">移除</button></td>' +
+                    '<td><button type="button" class="nav2-link nav4-remove-device-btn" data-guid="' + detail.guid + '" data-peer-id="' + d.peer_id + '">Gỡ bỏ</button></td>' +
                     '</tr>';
             });
             devicesHtml += '</tbody></table>';
         } else {
-            devicesHtml = '<div style="color:#6a737d;margin-top:16px;">暂无设备</div>';
+            devicesHtml = '<div style="color:#6a737d;margin-top:16px;">Chưa có thiết bị</div>';
         }
 
-        const typeText = detail.personal_type === 'public' ? '公开' : '私有';
+        const typeText = detail.personal_type === 'public' ? 'Công khai' : 'Riêng tư';
         const displayName = detail.display_name || detail.personal_name || '-';
         return (
             '<dl style="margin:0;">' +
-            '<div style="display:flex;gap:8px;margin:6px 0;"><dt style="min-width:88px;color:#6a737d;">地址簿名称</dt><dd style="margin:0;">' + displayName + '</dd></div>' +
-            '<div style="display:flex;gap:8px;margin:6px 0;"><dt style="min-width:88px;color:#6a737d;">类型</dt><dd style="margin:0;">' + typeText + '</dd></div>' +
-            '<div style="display:flex;gap:8px;margin:6px 0;"><dt style="min-width:88px;color:#6a737d;">设备数量</dt><dd style="margin:0;">' + (detail.device_count || 0) + '</dd></div>' +
-            '<div style="display:flex;gap:8px;margin:6px 0;"><dt style="min-width:88px;color:#6a737d;">创建时间</dt><dd style="margin:0;">' + (detail.created_at || '-') + '</dd></div>' +
+            '<div style="display:flex;gap:8px;margin:6px 0;"><dt style="min-width:88px;color:#6a737d;">Tên danh bạ</dt><dd style="margin:0;">' + displayName + '</dd></div>' +
+            '<div style="display:flex;gap:8px;margin:6px 0;"><dt style="min-width:88px;color:#6a737d;">Loại</dt><dd style="margin:0;">' + typeText + '</dd></div>' +
+            '<div style="display:flex;gap:8px;margin:6px 0;"><dt style="min-width:88px;color:#6a737d;">Số lượng thiết bị</dt><dd style="margin:0;">' + (detail.device_count || 0) + '</dd></div>' +
+            '<div style="display:flex;gap:8px;margin:6px 0;"><dt style="min-width:88px;color:#6a737d;">Ngày tạo</dt><dd style="margin:0;">' + (detail.created_at || '-') + '</dd></div>' +
             '</dl>' +
             devicesHtml
         );
@@ -113,7 +113,7 @@
         const {URLS} = getConstants();
         const {open: openModal} = getModal();
         const bodyEl = document.getElementById('nav4-detail-body');
-        if (bodyEl) bodyEl.innerHTML = '<div style="color:#6a737d;">加载中...</div>';
+        if (bodyEl) bodyEl.innerHTML = '<div style="color:#6a737d;">Đang tải...</div>';
         openModal('nav4-detail-root');
         const params = new URLSearchParams({guid: guid});
         fetch(`${URLS.PERSONAL_DETAIL}?${params.toString()}`, {
@@ -121,14 +121,14 @@
             credentials: 'same-origin',
             headers: {'X-Requested-With': 'XMLHttpRequest'}
         }).then(resp => {
-            if (!resp.ok) throw new Error('请求失败');
+            if (!resp.ok) throw new Error('Yêu cầu thất bại');
             return resp.json();
         }).then(data => {
-            if (!data || data.ok !== true) throw new Error((data && (data.err_msg || data.error)) || '加载失败');
+            if (!data || data.ok !== true) throw new Error((data && (data.err_msg || data.error)) || 'Tải thất bại');
             const html = renderDetailHTML(data.data || {});
             if (bodyEl) bodyEl.innerHTML = html;
         }).catch(err => {
-            if (bodyEl) bodyEl.innerHTML = '<div style="color:#b91c1c;">' + (err.message || '加载失败') + '</div>';
+            if (bodyEl) bodyEl.innerHTML = '<div style="color:#b91c1c;">' + (err.message || 'Tải thất bại') + '</div>';
         });
     }
 
@@ -160,13 +160,13 @@
         const confirmBtn = document.createElement('button');
         confirmBtn.type = 'button';
         confirmBtn.className = 'nav2-link';
-        confirmBtn.setAttribute('aria-label', '确认');
+        confirmBtn.setAttribute('aria-label', 'Xác nhận');
         confirmBtn.innerHTML = '<img src="' + ICONS.CONFIRM + '" width="16" height="16" alt="" aria-hidden="true">';
 
         const cancelBtn = document.createElement('button');
         cancelBtn.type = 'button';
         cancelBtn.className = 'nav2-link';
-        cancelBtn.setAttribute('aria-label', '取消');
+        cancelBtn.setAttribute('aria-label', 'Hủy');
         cancelBtn.innerHTML = '<img src="' + ICONS.CANCEL + '" width="16" height="16" alt="" aria-hidden="true">';
 
         const save = () => {
@@ -183,7 +183,7 @@
             } else if (field === 'tags') {
                 url = URLS.PERSONAL_UPDATE_TAGS;
             } else {
-                showToast('未知字段', 'error');
+                showToast('Trường không xác định', 'error');
                 return;
             }
 
@@ -200,16 +200,16 @@
                 if (!resp.ok) return parseFetchError(resp);
                 return resp.json();
             }).then(data => {
-                if (!data || data.ok !== true) throw new Error((data && (data.err_msg || data.error)) || '保存失败');
+                if (!data || data.ok !== true) throw new Error((data && (data.err_msg || data.error)) || 'Lưu thất bại');
                 cell.setAttribute('data-original', val);
                 textEl.textContent = val || '-';
                 cell.innerHTML = '';
                 cell.appendChild(textEl);
                 cell.appendChild(document.createTextNode(' '));
                 cell.appendChild(editBtn);
-                showToast('保存成功', 'success');
+                showToast('Lưu thành công', 'success');
             }).catch(err => {
-                showToast(err.message || '保存失败', 'error');
+                showToast(err.message || 'Lưu thất bại', 'error');
             });
         };
 
@@ -262,16 +262,16 @@
             if (!resp.ok) return parseFetchError(resp);
             return resp.json();
         }).then(data => {
-            if (!data || data.ok !== true) throw new Error((data && (data.err_msg || data.error)) || '获取地址簿列表失败');
+            if (!data || data.ok !== true) throw new Error((data && (data.err_msg || data.error)) || 'Lấy danh sách danh bạ thất bại');
             const personals = data.data || [];
 
             if (personals.length === 0) {
-                showToast('暂无可用地址簿，请先创建地址簿', 'info');
+                showToast('Chưa có danh bạ nào, vui lòng tạo danh bạ trước', 'info');
                 return;
             }
 
             const select = document.getElementById('nav2-add-to-book-guid');
-            select.innerHTML = '<option value="" disabled selected hidden>请选择地址簿</option>';
+            select.innerHTML = '<option value="" disabled selected hidden>Vui lòng chọn danh bạ</option>';
             personals.forEach(p => {
                 const option = document.createElement('option');
                 option.value = p.guid;
@@ -285,7 +285,7 @@
 
             openModal('nav2-add-to-book-root');
         }).catch(err => {
-            showToast(err.message || '获取地址簿列表失败，请稍后重试', 'error');
+            showToast(err.message || 'Lấy danh sách danh bạ thất bại, vui lòng thử lại sau', 'error');
         });
     }
 

@@ -8,7 +8,7 @@ from django.views.decorators.http import require_http_methods
 
 from apps.client_apis.common import check_login, request_debug_log, debug_response_None
 from apps.db.models import PeerInfo
-from apps.db.service import HeartBeatService, PeerInfoService, TokenService, UserService, \
+from apps.db.service import HeartBeatService, PeerInfoService, TokenService, UserService, \ 
     LoginClientService
 from common.utils import get_local_time, str2bool
 
@@ -101,7 +101,7 @@ def login(request: HttpRequest):
         assert user and user.check_password(password)
     except AssertionError:
         logger.error(traceback.format_exc())
-        return JsonResponse({'error': '用户名或密码错误'})
+        return JsonResponse({'error': 'Tên đăng nhập hoặc mật khẩu không đúng'})
 
     token = token_service.create_token(username, uuid)
 

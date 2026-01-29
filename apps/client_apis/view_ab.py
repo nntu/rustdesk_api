@@ -30,7 +30,17 @@ def ab_personal(request: HttpRequest):
     """
     token_service = TokenService(request=request)
     user_info = token_service.user_info
-    guid = user_info.user_personal.get(personal__personal_type='private').personal.guid
+    personal_link = (
+        user_info.user_personal
+        .select_related('personal')
+        .filter(personal__personal_type='private')
+        .first()
+    )
+    if personal_link:
+        personal = personal_link.personal
+    else:
+        personal = PersonalService().create_self_personal(user_info)
+    guid = personal.guid
     return JsonResponse(
         {
             "guid": guid,

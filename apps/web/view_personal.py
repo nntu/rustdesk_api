@@ -44,7 +44,7 @@ def create_personal(request: HttpRequest) -> JsonResponse:
     # personal_type = (request.POST.get('personal_type') or '').strip()
 
     if not personal_name:
-        return JsonResponse({'ok': False, 'err_msg': '地址簿名称不能为空'}, status=400)
+        return JsonResponse({'ok': False, 'err_msg': 'Tên danh bạ không được để trống'}, status=400)
     # if personal_type not in ('public', 'private'):
     #     personal_type = 'private'
     personal_type = 'public'
@@ -55,7 +55,7 @@ def create_personal(request: HttpRequest) -> JsonResponse:
         personal_name=personal_name
     ).first()
     if existing:
-        return JsonResponse({'ok': False, 'err_msg': '地址簿名称已存在'}, status=400)
+        return JsonResponse({'ok': False, 'err_msg': 'Tên danh bạ đã tồn tại'}, status=400)
 
     # 创建地址簿
     personal = Personal.objects.create(
@@ -80,15 +80,15 @@ def delete_personal(request: HttpRequest) -> JsonResponse:
     guid = (request.POST.get('guid') or '').strip()
 
     if not guid:
-        return JsonResponse({'ok': False, 'err_msg': '参数错误'}, status=400)
+        return JsonResponse({'ok': False, 'err_msg': 'Tham số không hợp lệ'}, status=400)
 
     personal = Personal.objects.filter(guid=guid, create_user_id=request.user.id).first()
     if not personal:
-        return JsonResponse({'ok': False, 'err_msg': '地址簿不存在或无权限删除'}, status=404)
+        return JsonResponse({'ok': False, 'err_msg': 'Danh bạ không tồn tại hoặc không có quyền xóa'}, status=404)
 
     # 检查是否是默认地址簿
     if is_default_personal(personal, request.user):
-        return JsonResponse({'ok': False, 'err_msg': '默认地址簿不能删除'}, status=400)
+        return JsonResponse({'ok': False, 'err_msg': 'Không thể xóa danh bạ mặc định'}, status=400)
 
     personal.delete()
     return JsonResponse({'ok': True})
@@ -108,15 +108,15 @@ def rename_personal(request: HttpRequest) -> JsonResponse:
     new_name = (request.POST.get('new_name') or '').strip()
 
     if not guid or not new_name:
-        return JsonResponse({'ok': False, 'err_msg': '参数错误'}, status=400)
+        return JsonResponse({'ok': False, 'err_msg': 'Tham số không hợp lệ'}, status=400)
 
     personal = Personal.objects.filter(guid=guid, create_user_id=request.user.id).first()
     if not personal:
-        return JsonResponse({'ok': False, 'err_msg': '地址簿不存在或无权限修改'}, status=404)
+        return JsonResponse({'ok': False, 'err_msg': 'Danh bạ không tồn tại hoặc không có quyền sửa'}, status=404)
 
     # 检查是否是默认地址簿
     if is_default_personal(personal, request.user):
-        return JsonResponse({'ok': False, 'err_msg': '默认地址簿不能重命名'}, status=400)
+        return JsonResponse({'ok': False, 'err_msg': 'Không thể đổi tên danh bạ mặc định'}, status=400)
 
     # 检查新名称是否已存在
     existing = Personal.objects.filter(
@@ -124,7 +124,7 @@ def rename_personal(request: HttpRequest) -> JsonResponse:
         personal_name=new_name
     ).exclude(guid=guid).first()
     if existing:
-        return JsonResponse({'ok': False, 'err_msg': '地址簿名称已存在'}, status=400)
+        return JsonResponse({'ok': False, 'err_msg': 'Tên danh bạ đã tồn tại'}, status=400)
 
     personal.personal_name = new_name
     personal.save(update_fields=['personal_name'])
@@ -144,11 +144,11 @@ def personal_detail(request: HttpRequest) -> JsonResponse:
     guid = (request.GET.get('guid') or '').strip()
 
     if not guid:
-        return JsonResponse({'ok': False, 'err_msg': '参数错误'}, status=400)
+        return JsonResponse({'ok': False, 'err_msg': 'Tham số không hợp lệ'}, status=400)
 
     personal = Personal.objects.filter(guid=guid, create_user_id=request.user.id).first()
     if not personal:
-        return JsonResponse({'ok': False, 'err_msg': '地址簿不存在或无权限查看'}, status=404)
+        return JsonResponse({'ok': False, 'err_msg': 'Danh bạ không tồn tại hoặc không có quyền xem'}, status=404)
 
     personal_service = PersonalService()
     peers = personal_service.get_peers_by_personal(guid=guid)
@@ -189,7 +189,7 @@ def personal_detail(request: HttpRequest) -> JsonResponse:
     data = {
         'guid': personal.guid,
         'personal_name': personal.personal_name,
-        'display_name': '默认地址簿' if personal.personal_name == f'{request.user.username}_personal' else personal.personal_name,
+        'display_name': 'Danh bạ mặc định' if personal.personal_name == f'{request.user.username}_personal' else personal.personal_name,
         'personal_type': personal.personal_type,
         'created_at': personal.created_at.strftime('%Y-%m-%d %H:%M:%S') if personal.created_at else '',
         'device_count': len(devices),
@@ -217,7 +217,7 @@ def get_personal_list(request: HttpRequest) -> JsonResponse:
     for personal in personals:
         # 设置显示名称：如果是 {用户名}_personal 格式，显示为"默认地址簿"
         if personal.personal_name == f'{request.user.username}_personal':
-            display_name = '默认地址簿'
+            display_name = 'Danh bạ mặc định'
         else:
             display_name = personal.personal_name
 
@@ -245,15 +245,15 @@ def add_device_to_personal(request: HttpRequest) -> JsonResponse:
     alias_text = (request.POST.get('alias') or '').strip()
 
     if not guid or not peer_id:
-        return JsonResponse({'ok': False, 'err_msg': '参数错误'}, status=400)
+        return JsonResponse({'ok': False, 'err_msg': 'Tham số không hợp lệ'}, status=400)
 
     personal = Personal.objects.filter(guid=guid, create_user_id=request.user.id).first()
     if not personal:
-        return JsonResponse({'ok': False, 'err_msg': '地址簿不存在或无权限操作'}, status=404)
+        return JsonResponse({'ok': False, 'err_msg': 'Danh bạ không tồn tại hoặc không có quyền thao tác'}, status=404)
 
     peer = PeerInfo.objects.filter(peer_id=peer_id).first()
     if not peer:
-        return JsonResponse({'ok': False, 'err_msg': '设备不存在'}, status=404)
+        return JsonResponse({'ok': False, 'err_msg': 'Thiết bị không tồn tại'}, status=404)
 
     # 添加或更新别名（如果已存在则更新）
     AliasService().set_alias(
@@ -283,11 +283,11 @@ def remove_device_from_personal(request: HttpRequest) -> JsonResponse:
     peer_id = (request.POST.get('peer_id') or '').strip()
 
     if not guid or not peer_id:
-        return JsonResponse({'ok': False, 'err_msg': '参数错误'}, status=400)
+        return JsonResponse({'ok': False, 'err_msg': 'Tham số không hợp lệ'}, status=400)
 
     personal = Personal.objects.filter(guid=guid, create_user_id=request.user.id).first()
     if not personal:
-        return JsonResponse({'ok': False, 'err_msg': '地址簿不存在或无权限操作'}, status=404)
+        return JsonResponse({'ok': False, 'err_msg': 'Danh bạ không tồn tại hoặc không có quyền thao tác'}, status=404)
 
     PersonalService().del_peer_to_personal(
         guid=guid,
@@ -313,17 +313,17 @@ def update_device_alias_in_personal(request: HttpRequest) -> JsonResponse:
     alias_text = (request.POST.get('alias') or '').strip()
 
     if not guid or not peer_id:
-        return JsonResponse({'ok': False, 'err_msg': '参数错误'}, status=400)
+        return JsonResponse({'ok': False, 'err_msg': 'Tham số không hợp lệ'}, status=400)
 
     # 验证地址簿权限
     personal = Personal.objects.filter(guid=guid, create_user_id=request.user.id).first()
     if not personal:
-        return JsonResponse({'ok': False, 'err_msg': '地址簿不存在或无权限操作'}, status=404)
+        return JsonResponse({'ok': False, 'err_msg': 'Danh bạ không tồn tại hoặc không có quyền thao tác'}, status=404)
 
     # 验证设备存在
     peer = PeerInfo.objects.filter(peer_id=peer_id).first()
     if not peer:
-        return JsonResponse({'ok': False, 'err_msg': '设备不存在'}, status=404)
+        return JsonResponse({'ok': False, 'err_msg': 'Thiết bị không tồn tại'}, status=404)
 
     # 如果别名为空，使用设备ID作为别名
     if not alias_text:
@@ -332,7 +332,7 @@ def update_device_alias_in_personal(request: HttpRequest) -> JsonResponse:
     # 更新别名
     alias_obj = Alias.objects.filter(peer_id=peer, guid=personal).first()
     if not alias_obj:
-        return JsonResponse({'ok': False, 'err_msg': '设备不在该地址簿中'}, status=404)
+        return JsonResponse({'ok': False, 'err_msg': 'Thiết bị không có trong danh bạ này'}, status=404)
 
     alias_obj.alias = alias_text
     alias_obj.save(update_fields=['alias'])
@@ -355,17 +355,17 @@ def update_device_tags_in_personal(request: HttpRequest) -> JsonResponse:
     tags_text = (request.POST.get('tags') or '').strip()
 
     if not guid or not peer_id:
-        return JsonResponse({'ok': False, 'err_msg': '参数错误'}, status=400)
+        return JsonResponse({'ok': False, 'err_msg': 'Tham số không hợp lệ'}, status=400)
 
     # 验证地址簿权限
     personal = Personal.objects.filter(guid=guid, create_user_id=request.user.id).first()
     if not personal:
-        return JsonResponse({'ok': False, 'err_msg': '地址簿不存在或无权限操作'}, status=404)
+        return JsonResponse({'ok': False, 'err_msg': 'Danh bạ không tồn tại hoặc không có quyền thao tác'}, status=404)
 
     # 验证设备存在
     peer = PeerInfo.objects.filter(peer_id=peer_id).first()
     if not peer:
-        return JsonResponse({'ok': False, 'err_msg': '设备不存在'}, status=404)
+        return JsonResponse({'ok': False, 'err_msg': 'Thiết bị không tồn tại'}, status=404)
 
     # 更新标签（在ClientTags表中）
     # 先删除该设备在该地址簿的所有标签

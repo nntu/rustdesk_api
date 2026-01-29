@@ -1,21 +1,21 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="vi">
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
-    <title>登录 - RustDeskApi</title>
+    <title>Đăng nhập - RustDeskApi</title>
     {% load static %}
     <link rel="stylesheet" href="{% static 'css/global.css' %}">
     <link rel="stylesheet" href="{% static 'css/login.css' %}">
-    <!-- 该模板可直接用于 django.contrib.auth.views.LoginView 或自定义视图 -->
+    <!-- Template này có thể dùng trực tiếp cho django.contrib.auth.views.LoginView hoặc view tùy chỉnh -->
 </head>
 <body>
 <div class="page">
-    <div class="card" role="region" aria-label="登录">
-        <h1 class="title">账号登录</h1>
-        <p class="subtitle">请输入用户名与密码继续</p>
+    <div class="card" role="region" aria-label="Đăng nhập">
+        <h1 class="title">Đăng nhập tài khoản</h1>
+        <p class="subtitle">Vui lòng nhập tên đăng nhập và mật khẩu để tiếp tục</p>
 
-        {# 全局消息提示（Django messages） #}
+        {# Thông báo toàn cục (Django messages) #}
         {% if messages %}
             <div class="messages">
                 {% for message in messages %}
@@ -27,19 +27,19 @@
         <form method="post" action="{% url 'web_login' %}">
             {% csrf_token %}
 
-            {# 处理 next 参数，便于登录后跳转 #}
+            {# Xử lý tham số next để chuyển hướng sau đăng nhập #}
             {% if next %}
                 <input type="hidden" name="next" value="{{ next }}"/>
             {% endif %}
 
-            {# 若提供了 AuthenticationForm 或自定义表单，则按字段渲染；否则使用基础输入框 #}
+            {# Nếu cung cấp AuthenticationForm hoặc form tùy chỉnh, render theo trường; nếu không dùng input cơ bản #}
             {% if form %}
                 {% if form.non_field_errors %}
                     <div class="errors">{{ form.non_field_errors }}</div>
                 {% endif %}
 
                 <div>
-                    <label for="id_username">用户名</label>
+                    <label for="id_username">Tên đăng nhập</label>
                     {{ form.username }}
                     {% if form.username.errors %}
                         <div class="errors">{{ form.username.errors }}</div>
@@ -47,7 +47,7 @@
                 </div>
 
                 <div>
-                    <label for="id_password">密码</label>
+                    <label for="id_password">Mật khẩu</label>
                     {{ form.password }}
                     {% if form.password.errors %}
                         <div class="errors">{{ form.password.errors }}</div>
@@ -55,30 +55,29 @@
                 </div>
             {% else %}
                 <div>
-                    <label for="id_username">用户名</label>
+                    <label for="id_username">Tên đăng nhập</label>
                     <input id="id_username" name="username" type="text" autocomplete="username" required/>
                 </div>
 
                 <div>
-                    <label for="id_password">密码</label>
+                    <label for="id_password">Mật khẩu</label>
                     <input id="id_password" name="password" type="password" autocomplete="current-password" required/>
                 </div>
             {% endif %}
 
             <div class="row">
-                <label class="checkbox"><input type="checkbox" name="remember" value="1"/> 记住我</label>
-                {#                <a href="/password-reset/">忘记密码？</a>#}
+                <label class="checkbox"><input type="checkbox" name="remember" value="1"/> Ghi nhớ đăng nhập</label>
+                {#                <a href="/password-reset/">Quên mật khẩu?</a>#}
             </div>
 
-            <button class="btn" type="submit">登录</button>
+            <button class="btn" type="submit">Đăng nhập</button>
         </form>
 
         <div class="footer">
-            没有账号？请联系管理员创建账户
+            Chưa có tài khoản? Vui lòng liên hệ quản trị viên để tạo tài khoản
         </div>
     </div>
 </div>
 </body>
 </html>
-
 

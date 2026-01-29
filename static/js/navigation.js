@@ -47,12 +47,12 @@
      */
     function updatePageTitle(itemKey) {
         const titleMap = {
-            'nav-1': '首页',
-            'nav-2': '设备管理',
-            'nav-3': '用户管理',
-            'nav-4': '地址簿'
+            'nav-1': 'Trang chủ',
+            'nav-2': 'Quản lý thiết bị',
+            'nav-3': 'Quản lý người dùng',
+            'nav-4': 'Danh bạ'
         };
-        const pageTitle = titleMap[itemKey] || '控制台';
+        const pageTitle = titleMap[itemKey] || 'Bảng điều khiển';
         document.title = `${pageTitle} - RustDeskApi`;
     }
 
@@ -103,7 +103,7 @@
             const event = new CustomEvent('contentLoaded', {detail: {key: itemKey}});
             document.dispatchEvent(event);
         }).catch(() => {
-            content.innerHTML = '<p class="content-empty">加载失败，请稍后重试</p>';
+            content.innerHTML = '<p class="content-empty">Tải thất bại, vui lòng thử lại sau</p>';
         }).finally(() => {
             content.setAttribute('aria-busy', 'false');
         });
@@ -180,4 +180,3 @@
     window.APP = APP;
 
 })(window);
-

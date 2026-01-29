@@ -20,13 +20,13 @@ def update_user(request: HttpRequest) -> JsonResponse:
     :return: {"ok": true}
     """
     if not request.user.is_staff:
-        return JsonResponse({'ok': False, 'err_msg': '无权限'}, status=403)
+        return JsonResponse({'ok': False, 'err_msg': 'Không có quyền'}, status=403)
     username = (request.POST.get('username') or '').strip()
     if not username:
-        return JsonResponse({'ok': False, 'err_msg': '参数错误'}, status=400)
+        return JsonResponse({'ok': False, 'err_msg': 'Tham số không hợp lệ'}, status=400)
     user = User.objects.filter(username=username).first()
     if not user:
-        return JsonResponse({'ok': False, 'err_msg': '用户不存在'}, status=404)
+        return JsonResponse({'ok': False, 'err_msg': 'Người dùng không tồn tại'}, status=404)
     full_name = (request.POST.get('full_name') or '').strip()
     email = (request.POST.get('email') or '').strip()
     is_staff_raw = request.POST.get('is_staff')
@@ -46,7 +46,7 @@ def update_user(request: HttpRequest) -> JsonResponse:
     # 不允许用户修改自己的管理员权限
     if is_staff_raw is not None:
         if username == request.user.username:
-            return JsonResponse({'ok': False, 'err_msg': '不能修改自己的管理员权限'}, status=400)
+            return JsonResponse({'ok': False, 'err_msg': 'Không thể sửa quyền quản trị của chính mình'}, status=400)
         user.is_staff = (str(is_staff_raw).strip() == '1')
         update_fields.append('is_staff')
 
@@ -66,19 +66,19 @@ def reset_user_password(request: HttpRequest) -> JsonResponse:
     :return: {"ok": true}
     """
     if not request.user.is_staff:
-        return JsonResponse({'ok': False, 'err_msg': '无权限'}, status=403)
+        return JsonResponse({'ok': False, 'err_msg': 'Không có quyền'}, status=403)
     username = (request.POST.get('username') or '').strip()
     password1 = (request.POST.get('password1') or '').strip()
     password2 = (request.POST.get('password2') or '').strip()
     if not username or not password1 or not password2:
-        return JsonResponse({'ok': False, 'err_msg': '参数错误'}, status=400)
+        return JsonResponse({'ok': False, 'err_msg': 'Tham số không hợp lệ'}, status=400)
     if password1 != password2:
-        return JsonResponse({'ok': False, 'err_msg': '两次密码不一致'}, status=400)
+        return JsonResponse({'ok': False, 'err_msg': 'Mật khẩu nhập lại không khớp'}, status=400)
     if len(password1) < 6:
-        return JsonResponse({'ok': False, 'err_msg': '密码长度至少为6位'}, status=400)
+        return JsonResponse({'ok': False, 'err_msg': 'Độ dài mật khẩu ít nhất 6 ký tự'}, status=400)
     user = User.objects.filter(username=username).first()
     if not user:
-        return JsonResponse({'ok': False, 'err_msg': '用户不存在'}, status=404)
+        return JsonResponse({'ok': False, 'err_msg': 'Người dùng không tồn tại'}, status=404)
     user.set_password(password1)
     user.save(update_fields=['password'])
     return JsonResponse({'ok': True})
@@ -95,16 +95,16 @@ def delete_user(request: HttpRequest) -> JsonResponse:
     :return: {"ok": true}
     """
     if not request.user.is_staff:
-        return JsonResponse({'ok': False, 'err_msg': '无权限'}, status=403)
+        return JsonResponse({'ok': False, 'err_msg': 'Không có quyền'}, status=403)
     username = (request.POST.get('username') or '').strip()
     if not username:
-        return JsonResponse({'ok': False, 'err_msg': '参数错误'}, status=400)
+        return JsonResponse({'ok': False, 'err_msg': 'Tham số không hợp lệ'}, status=400)
     # 不能删除自己
     if username == request.user.username:
-        return JsonResponse({'ok': False, 'err_msg': '不能删除自己'}, status=400)
+        return JsonResponse({'ok': False, 'err_msg': 'Không thể xóa chính mình'}, status=400)
     user = User.objects.filter(username=username, is_active=True).first()
     if not user:
-        return JsonResponse({'ok': False, 'err_msg': '用户不存在或已被删除'}, status=404)
+        return JsonResponse({'ok': False, 'err_msg': 'Người dùng không tồn tại hoặc đã bị xóa'}, status=404)
     # 软删除：将is_active置为False
     user.is_active = False
     new_name = user.username
@@ -130,7 +130,7 @@ def create_user(request: HttpRequest) -> JsonResponse:
     :return: {"ok": true}
     """
     if not request.user.is_staff:
-        return JsonResponse({'ok': False, 'err_msg': '无权限'}, status=403)
+        return JsonResponse({'ok': False, 'err_msg': 'Không có quyền'}, status=403)
 
     username = (request.POST.get('username') or '').strip()
     password1 = (request.POST.get('password1') or '').strip()
@@ -141,19 +141,19 @@ def create_user(request: HttpRequest) -> JsonResponse:
 
     # 参数校验
     if not username or not password1 or not password2:
-        return JsonResponse({'ok': False, 'err_msg': '用户名和密码不能为空'}, status=400)
+        return JsonResponse({'ok': False, 'err_msg': 'Tên người dùng và mật khẩu không được để trống'}, status=400)
     if password1 != password2:
-        return JsonResponse({'ok': False, 'err_msg': '两次密码不一致'}, status=400)
+        return JsonResponse({'ok': False, 'err_msg': 'Mật khẩu nhập lại không khớp'}, status=400)
     if len(password1) < 6:
-        return JsonResponse({'ok': False, 'err_msg': '密码长度至少为6位'}, status=400)
+        return JsonResponse({'ok': False, 'err_msg': 'Độ dài mật khẩu ít nhất 6 ký tự'}, status=400)
 
     # 检查用户名是否已存在（包括软删除的用户）
     if User.objects.filter(username=username).exists():
-        return JsonResponse({'ok': False, 'err_msg': '用户名已存在'}, status=400)
+        return JsonResponse({'ok': False, 'err_msg': 'Tên người dùng đã tồn tại'}, status=400)
 
     # 检查邮箱是否已存在（如果提供了邮箱）
     if email and User.objects.filter(email=email).exists():
-        return JsonResponse({'ok': False, 'err_msg': '邮箱已被使用'}, status=400)
+        return JsonResponse({'ok': False, 'err_msg': 'Email đã được sử dụng'}, status=400)
 
     # 确定管理员权限
     is_staff = (str(is_staff_raw).strip() == '1') if is_staff_raw is not None else False
@@ -179,4 +179,4 @@ def create_user(request: HttpRequest) -> JsonResponse:
 
         return JsonResponse({'ok': True})
     except Exception as e:
-        return JsonResponse({'ok': False, 'err_msg': f'创建用户失败: {str(e)}'}, status=500)
+        return JsonResponse({'ok': False, 'err_msg': f'Tạo người dùng thất bại: {str(e)}'}, status=500)

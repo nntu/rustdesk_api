@@ -124,9 +124,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = 'zh-hans'  # 简体中文
+LANGUAGE_CODE = 'vi'  # Tiếng Việt
 
-TIME_ZONE = 'Asia/Shanghai'  # 使用服务器本地时区
+TIME_ZONE = 'Asia/Ho_Chi_Minh'  # Múi giờ Hồ Chí Minh
 
 USE_I18N = True
 USE_TZ = True

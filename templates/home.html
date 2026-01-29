@@ -1,16 +1,16 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="vi">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>控制台 - RustDeskApi</title>
+    <title>Bảng điều khiển - RustDeskApi</title>
     {% load static %}
     <link rel="stylesheet" href="{% static 'css/global.css' %}">
     <link rel="stylesheet" href="{% static 'css/home.css' %}">
     <link rel="stylesheet" href="{% static 'css/nav1.css' %}">
     <link rel="stylesheet" href="{% static 'css/nav2.css' %}">
     <style>
-        /* Toast 轻量样式（仅此页使用） */
+        /* Toast nhẹ (chỉ dùng trang này) */
         .toast-container {
             position: fixed;
             top: 16px;
@@ -60,35 +60,35 @@
 </head>
 <body data-current-user="{{ user.username }}">
 <header class="header">
-    <div class="title">控制台</div>
+    <div class="title">Bảng điều khiển</div>
     <div class="user-actions">
-        <span>欢迎，{{ username }}！</span>
-        <a href="{% url 'web_logout' %}">退出登录</a>
+        <span>Xin chào, {{ username }}!</span>
+        <a href="{% url 'web_logout' %}">Đăng xuất</a>
     </div>
 </header>
 <div class="layout">
-    <aside class="sidebar" role="navigation" aria-label="侧边导航">
-        <div class="brand">导航</div>
+    <aside class="sidebar" role="navigation" aria-label="Thanh điều hướng bên">
+        <div class="brand">Điều hướng</div>
         <nav>
             <ul class="nav">
-                <li><a href="#" data-key="nav-1">首页</a></li>
-                <li><a href="#" data-key="nav-2">设备管理</a></li>
-                <li><a href="#" data-key="nav-3">用户管理</a></li>
-                <li><a href="#" data-key="nav-4">地址簿</a></li>
+                <li><a href="#" data-key="nav-1">Trang chủ</a></li>
+                <li><a href="#" data-key="nav-2">Quản lý thiết bị</a></li>
+                <li><a href="#" data-key="nav-3">Quản lý người dùng</a></li>
+                <li><a href="#" data-key="nav-4">Sổ địa chỉ</a></li>
             </ul>
         </nav>
     </aside>
     <main id="content" class="content" role="main" aria-live="polite" aria-busy="false">
-        <div class="content-empty" id="empty-hint">请选择左侧的一个导航项以查看内容</div>
+        <div class="content-empty" id="empty-hint">Vui lòng chọn một mục điều hướng bên trái để xem nội dung</div>
     </main>
 </div>
 
-<!-- 添加设备到地址簿弹框 -->
+<!-- Thêm thiết bị vào sổ địa chỉ -->
 <div id="nav2-add-to-book-root" class="modal-backdrop" aria-hidden="true">
     <div class="modal modal--sm" role="dialog" aria-modal="true" aria-labelledby="nav2-add-to-book-title">
         <div class="modal-header">
-            <h3 id="nav2-add-to-book-title" class="modal-title">添加设备到地址簿</h3>
-            <button type="button" class="modal-close" data-close="nav2-add-to-book" aria-label="关闭">
+            <h3 id="nav2-add-to-book-title" class="modal-title">Thêm thiết bị vào sổ địa chỉ</h3>
+            <button type="button" class="modal-close" data-close="nav2-add-to-book" aria-label="Đóng">
                 <img src="{% static 'icons/close.svg' %}" width="16" height="16" alt="" aria-hidden="true">
             </button>
         </div>
@@ -96,30 +96,30 @@
             <form id="nav2-add-to-book-form">
                 <input type="hidden" name="peer_id" id="nav2-add-to-book-peer-id">
                 <div class="nav2-form-row">
-                    <label style="min-width:88px;color:#6a737d;">设备ID</label>
+                    <label style="min-width:88px;color:#6a737d;">ID thiết bị</label>
                     <span id="nav2-add-to-book-peer-id-display" style="color:#24292e;"></span>
                 </div>
                 <div class="nav2-form-row">
-                    <label for="nav2-add-to-book-guid" style="min-width:88px;color:#6a737d;">选择地址簿</label>
+                    <label for="nav2-add-to-book-guid" style="min-width:88px;color:#6a737d;">Chọn sổ địa chỉ</label>
                     <select class="nav2-select" name="guid" id="nav2-add-to-book-guid" required style="flex:1;">
-                        <option value="" disabled selected hidden>请选择地址簿</option>
+                        <option value="" disabled selected hidden>Vui lòng chọn sổ địa chỉ</option>
                     </select>
                 </div>
                 <div class="nav2-form-row">
-                    <label for="nav2-add-to-book-alias" style="min-width:88px;color:#6a737d;">设备别名</label>
+                    <label for="nav2-add-to-book-alias" style="min-width:88px;color:#6a737d;">Tên thiết bị</label>
                     <input class="nav2-input nav2-input-full" type="text" name="alias" id="nav2-add-to-book-alias"
-                           placeholder="请输入设备别名(可选)">
+                           placeholder="Nhập tên thiết bị (tùy chọn)">
                 </div>
                 <div style="display:flex;gap:8px;justify-content:flex-end;">
-                    <button type="button" class="nav2-btn" data-close="nav2-add-to-book">取消</button>
-                    <button type="submit" class="nav2-btn nav2-primary">添加</button>
+                    <button type="button" class="nav2-btn" data-close="nav2-add-to-book">Hủy</button>
+                    <button type="submit" class="nav2-btn nav2-primary">Thêm</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
 
-<!-- 引入模块化的 JavaScript 文件 -->
+<!-- Nhập các tệp JavaScript module hóa -->
 <script src="{% static 'js/constants.js' %}"></script>
 <script src="{% static 'js/utils.js' %}"></script>
 <script src="{% static 'js/modal.js' %}"></script>
@@ -129,18 +129,18 @@
 <script src="{% static 'js/nav4.js' %}"></script>
 <script src="{% static 'js/events.js' %}"></script>
 
-<!-- Django 模板变量注入（< 50 行） -->
+<!-- Chèn biến template Django (< 50 dòng) -->
 <script>
     /**
-     * Django 模板变量注入到全局命名空间
+     * Chèn biến template Django vào namespace toàn cục
      *
-     * 仅在此处注入需要Django模板标签渲染的URL和配置
-     * 所有业务逻辑代码已移至独立的JS模块
+     * Chỉ chèn URL và cấu hình cần render tag template Django ở đây
+     * Tất cả code logic đã được chuyển sang module JS riêng biệt
      */
     (function () {
         'use strict';
 
-        // 注入 URL 常量
+        // Chèn hằng số URL
         window.APP.URLS = {
             NAV_CONTENT: "{% url 'web_nav_content' %}",
             RENAME_ALIAS: "{% url 'web_rename_alias' %}",
@@ -164,7 +164,7 @@
             HOME: "{% url 'web_home' %}"
         };
 
-        // 应用初始化
+        // Khởi tạo ứng dụng
         document.addEventListener('DOMContentLoaded', function () {
             APP.navigation.init();
             APP.events.init();

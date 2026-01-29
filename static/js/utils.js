@@ -39,7 +39,7 @@
         const div = document.createElement('div');
         const kind = (type === 'success' || type === 'info') ? type : 'error';
         div.className = `toast toast--${kind}`;
-        div.textContent = message || '发生错误';
+        div.textContent = message || 'Đã xảy ra lỗi';
         container.appendChild(div);
         requestAnimationFrame(() => div.classList.add('toast--show'));
         setTimeout(() => {
@@ -56,7 +56,7 @@
      * :returns: 解码后的文本
      * :rtype: string
      */
-    function decodeMessage(raw, fallbackText = '发生错误') {
+    function decodeMessage(raw, fallbackText = 'Đã xảy ra lỗi') {
         let msg = String(raw || '').trim();
         if (!msg) return fallbackText;
         if (msg[0] === '{' || msg[0] === '[') {
@@ -135,4 +135,3 @@
     window.APP = APP;
 
 })(window);
-
