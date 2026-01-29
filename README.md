@@ -2,127 +2,127 @@
 
 # RustDesk API Server
 
-[English](./README_EN.md) | 中文
+[English](./README_EN.md) | [中文](./README.md) | Tiếng Việt
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python Version](https://img.shields.io/badge/python-3.13-blue.svg)](https://www.python.org/downloads/)
 [![Django Version](https://img.shields.io/badge/django-5.2-green.svg)](https://www.djangoproject.com/)
 [![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](https://www.docker.com/)
 
-一个功能完善的 RustDesk API 服务器，提供客户端认证、设备管理、地址簿管理、审计日志等功能。
+Một máy chủ API RustDesk đầy đủ tính năng cung cấp xác thực máy khách, quản lý thiết bị, quản lý sổ địa chỉ, nhật ký kiểm toán và hơn thế nữa.
 
 </div>
 
 ---
 
-## 📖 目录
+## 📖 Mục lục
 
-- [特性](#特性)
-- [系统架构](#系统架构)
-- [快速开始](#快速开始)
-  - [环境要求](#环境要求)
-  - [Docker 部署（推荐）](#docker-部署推荐)
-  - [手动部署](#手动部署)
-- [配置说明](#配置说明)
-- [API 文档](#api-文档)
-  - [客户端 API](#客户端-api)
-  - [Web 管理 API](#web-管理-api)
-- [数据库模型](#数据库模型)
-- [开发指南](#开发指南)
-- [常见问题](#常见问题)
-- [贡献指南](#贡献指南)
-- [许可证](#许可证)
+- [Tính năng](#tính-năng)
+- [Kiến trúc hệ thống](#kiến-trúc-hệ-thống)
+- [Bắt đầu nhanh](#bắt-đầu-nhanh)
+    - [Yêu cầu](#yêu-cầu)
+    - [Triển khai Docker (Khuyên dùng)](#triển-khai-docker-khuyên-dùng)
+    - [Triển khai thủ công](#triển-khai-thủ-công)
+- [Cấu hình](#cấu-hình)
+- [Tài liệu API](#tài-liệu-api)
+    - [API máy khách](#api-máy-khách)
+    - [API quản lý Web](#api-quản-lý-web)
+- [Mô hình cơ sở dữ liệu](#mô-hình-cơ-sở-dữ-liệu)
+- [Hướng dẫn phát triển](#hướng-dẫn-phát-triển)
+- [Câu hỏi thường gặp](#câu-hỏi-thường-gặp)
+- [Đóng góp](#đóng-góp)
+- [Giấy phép](#giấy-phép)
 
-## ✨ 特性
+## ✨ Tính năng
 
-### 核心功能
+### Tính năng cốt lõi
 
-- 🔐 **用户认证系统** - 支持用户注册、登录、令牌管理
-- 💓 **心跳检测** - 实时监控客户端在线状态
-- 📊 **系统信息收集** - 自动收集并存储客户端系统信息
-- 🏷️ **设备标签管理** - 支持设备分组和标签管理
-- 📒 **地址簿管理** - 支持个人和共享地址簿
-- 📝 **审计日志** - 记录连接和文件传输日志
-- 🌐 **多语言支持** - 支持中文和英文界面
-- 🎨 **Web 管理界面** - 提供友好的 Web 管理后台
+- 🔐 **Hệ thống xác thực người dùng** - Hỗ trợ đăng ký người dùng, đăng nhập, quản lý mã thông báo (token)
+- 💓 **Phát hiện nhịp tim** - Giám sát thời gian thực trạng thái trực tuyến của máy khách
+- 📊 **Thu thập thông tin hệ thống** - Tự động thu thập và lưu trữ thông tin hệ thống máy khách
+- 🏷️ **Quản lý thẻ thiết bị** - Hỗ trợ nhóm thiết bị và quản lý thẻ
+- 📒 **Quản lý sổ địa chỉ** - Hỗ trợ sổ địa chỉ cá nhân và chia sẻ
+- 📝 **Nhật ký kiểm toán** - Ghi lại nhật ký kết nối và chuyển tập tin
+- 🌐 **Hỗ trợ đa ngôn ngữ** - Hỗ trợ giao diện tiếng Trung và tiếng Anh
+- 🎨 **Giao diện quản trị Web** - Cung cấp trang quản trị web thân thiện
 
-### 技术特性
+### Tính năng kỹ thuật
 
-- 🚀 **高性能** - 基于 Django + Gunicorn，支持多进程多线程
-- 🐳 **容器化部署** - 完整的 Docker 支持
-- 💾 **多数据库支持** - 支持 SQLite、MySQL、PostgreSQL
-- 🔧 **灵活配置** - 通过环境变量轻松配置
-- 📱 **跨平台** - 支持 Windows、macOS、Linux
+- 🚀 **Hiệu suất cao** - Dựa trên Django + Gunicorn, hỗ trợ đa tiến trình và đa luồng
+- 🐳 **Triển khai container** - Hỗ trợ Docker đầy đủ
+- 💾 **Hỗ trợ đa cơ sở dữ liệu** - Hỗ trợ SQLite, MySQL, PostgreSQL
+- 🔧 **Cấu hình linh hoạt** - Cấu hình dễ dàng thông qua biến môi trường
+- 📱 **Đa nền tảng** - Hỗ trợ Windows, macOS, Linux
 
-## 🏗️ 系统架构
+## 🏗️ Kiến trúc hệ thống
 
 ```
 rustdesk_api/
 ├── apps/
-│   ├── client_apis/      # 客户端 API 接口
-│   │   ├── views.py      # 核心 API 视图
-│   │   ├── view_ab.py    # 地址簿 API
-│   │   └── view_audit.py # 审计日志 API
-│   ├── web/              # Web 管理界面
-│   │   ├── view_auth.py  # 认证视图
-│   │   ├── view_home.py  # 主页视图
-│   │   ├── view_user.py  # 用户管理
-│   │   └── view_personal.py # 地址簿管理
-│   ├── db/               # 数据库模型和服务
-│   │   ├── models.py     # 数据模型定义
-│   │   └── service.py    # 数据库服务层
-│   ├── commands/         # 管理命令
-│   └── common/           # 公共中间件
-├── common/               # 公共工具
-│   ├── db_config.py      # 数据库配置
-│   ├── env.py            # 环境变量管理
-│   ├── logging_config.py # 日志配置
-│   └── utils.py          # 工具函数
-├── static/               # 静态文件
-├── templates/            # 模板文件
-└── rustdesk_api/         # Django 项目配置
+│   ├── client_apis/      # Giao diện API máy khách
+│   │   ├── views.py      # Các view API cốt lõi
+│   │   ├── view_ab.py    # API sổ địa chỉ
+│   │   └── view_audit.py # API nhật ký kiểm toán
+│   ├── web/              # Giao diện quản trị Web
+│   │   ├── view_auth.py  # View xác thực
+│   │   ├── view_home.py  # View trang chủ
+│   │   ├── view_user.py  # Quản lý người dùng
+│   │   └── view_personal.py # Quản lý sổ địa chỉ
+│   ├── db/               # Mô hình và dịch vụ cơ sở dữ liệu
+│   │   ├── models.py     # Định nghĩa mô hình dữ liệu
+│   │   └── service.py    # Lớp dịch vụ cơ sở dữ liệu
+│   ├── commands/         # Lệnh quản lý
+│   └── common/           # Middleware chung
+├── common/               # Tiện ích chung
+│   ├── db_config.py      # Cấu hình cơ sở dữ liệu
+│   ├── env.py            # Quản lý biến môi trường
+│   ├── logging_config.py # Cấu hình ghi nhật ký
+│   └── utils.py          # Hàm tiện ích
+├── static/               # Tập tin tĩnh
+├── templates/            # Tập tin mẫu
+└── rustdesk_api/         # Cấu hình dự án Django
 ```
 
-## 🚀 快速开始
+## 🚀 Bắt đầu nhanh
 
-### 环境要求
+### Yêu cầu
 
 - Python 3.13+
-- Docker & Docker Compose（容器化部署）
-- SQLite / MySQL / PostgreSQL（数据库）
+- Docker & Docker Compose (để triển khai container)
+- SQLite / MySQL / PostgreSQL (cơ sở dữ liệu)
 
-### Docker 部署（推荐）
+### Triển khai Docker (Khuyên dùng)
 
-1. **克隆项目**
+1. **Sao chép dự án**
 
 ```bash
 git clone https://github.com/yourusername/rustdesk_api.git
 cd rustdesk_api
 ```
 
-2. **启动服务**
+2. **Khởi động dịch vụ**
 
 ```bash
 docker-compose up -d
 ```
 
-3. **访问服务**
+3. **Truy cập dịch vụ**
 
-- API 服务: `http://localhost:21114`
-- Web 管理: `http://localhost:21114/web/`
+- Dịch vụ API: `http://localhost:21114`
+- Quản trị Web: `http://localhost:21114/web/`
 
-服务将自动完成数据库迁移和初始化。
+Dịch vụ sẽ tự động hoàn tất di chuyển và khởi tạo cơ sở dữ liệu.
 
-### 手动部署
+### Triển khai thủ công
 
-1. **克隆项目**
+1. **Sao chép dự án**
 
 ```bash
 git clone https://github.com/yourusername/rustdesk_api.git
 cd rustdesk_api
 ```
 
-2. **创建虚拟环境**
+2. **Tạo môi trường ảo**
 
 ```bash
 python -m venv venv
@@ -132,69 +132,69 @@ venv\Scripts\activate
 source venv/bin/activate
 ```
 
-3. **安装依赖**
+3. **Cài đặt các phụ thuộc**
 
 ```bash
 pip install -r requirements.txt
 ```
 
-4. **配置环境变量**
+4. **Cấu hình biến môi trường**
 
 ```bash
-# 创建 .env 文件或设置环境变量
+# Tạo tập tin .env hoặc thiết lập biến môi trường
 export DATABASE=sqlite3
 export DEBUG=False
 export WORKERS=4
 export THREADS=8
 ```
 
-5. **数据库迁移**
+5. **Di chuyển cơ sở dữ liệu**
 
 ```bash
 python manage.py migrate
 python manage.py collectstatic --noinput
 ```
 
-6. **创建管理员账户**
+6. **Tạo tài khoản quản trị viên**
 
 ```bash
 python manage.py createsuperuser
 ```
 
-7. **启动服务**
+7. **Khởi động dịch vụ**
 
 ```bash
-# 开发环境
+# Phát triển
 python manage.py runserver 0.0.0.0:21114
 
-# 生产环境
+# Sản xuất
 ./start.sh
 ```
 
-## ⚙️ 配置说明
+## ⚙️ Cấu hình
 
-### 环境变量
+### Biến môi trường
 
-| 变量名               | 说明           | 默认值             | 可选值                              |
-|-------------------|--------------|-----------------|----------------------------------|
-| `DATABASE`        | 数据库类型        | `sqlite3`       | `sqlite3`, `mysql`, `postgresql` |
-| `DEBUG`           | 调试模式         | `False`         | `True`, `False`                  |
-| `HOST`            | 监听地址         | `0.0.0.0`       | 任何有效 IP                          |
-| `PORT`            | 监听端口         | `21114`         | 1-65535                          |
-| `WORKERS`         | Gunicorn 进程数 | `4`             | 建议 2-8                           |
-| `THREADS`         | 每进程线程数       | `8`             | 建议 2-16                          |
-| `SESSION_TIMEOUT` | 会话超时时间(秒)    | `3600`          | 任何正整数                            |
-| `TZ`              | 时区           | `Asia/Shanghai` | 标准时区名称                           |
+| Biến              | Mô tả                     | Mặc định        | Tùy chọn                         |
+|-------------------|---------------------------|-----------------|----------------------------------|
+| `DATABASE`        | Loại cơ sở dữ liệu        | `sqlite3`       | `sqlite3`, `mysql`, `postgresql` |
+| `DEBUG`           | Chế độ gỡ lỗi             | `False`         | `True`, `False`                  |
+| `HOST`            | Địa chỉ lắng nghe         | `0.0.0.0`       | Bất kỳ IP hợp lệ nào             |
+| `PORT`            | Cổng lắng nghe            | `21114`         | 1-65535                          |
+| `WORKERS`         | Số lượng worker Gunicorn  | `4`             | Khuyên dùng 2-8                  |
+| `THREADS`         | Luồng trên mỗi worker     | `8`             | Khuyên dùng 2-16                 |
+| `SESSION_TIMEOUT` | Thời gian chờ phiên (giây)| `3600`          | Bất kỳ số nguyên dương nào       |
+| `TZ`              | Múi giờ                   | `Asia/Shanghai` | Tên múi giờ tiêu chuẩn           |
 
-### 数据库配置
+### Cấu hình cơ sở dữ liệu
 
-#### SQLite（默认）
+#### SQLite (Mặc định)
 
 ```bash
 export DATABASE=sqlite3
 ```
 
-数据文件位于 `./data/db.sqlite3`
+Tập tin dữ liệu nằm tại `./data/db.sqlite3`
 
 #### MySQL
 
@@ -218,13 +218,13 @@ export POSTGRES_PASSWORD=yourpassword
 export POSTGRES_DB=rustdesk_api
 ```
 
-## 📡 API 文档
+## 📡 Tài liệu API
 
-### 客户端 API
+### API máy khách
 
-#### 认证相关
+#### Xác thực
 
-**登录**
+**Đăng nhập**
 
 ```http
 POST /api/client/login
@@ -237,23 +237,23 @@ Content-Type: application/json
 }
 ```
 
-**登出**
+**Đăng xuất**
 
 ```http
 POST /api/client/logout
 Authorization: Bearer <token>
 ```
 
-**获取当前用户**
+**Lấy người dùng hiện tại**
 
 ```http
 GET /api/client/currentUser
 Authorization: Bearer <token>
 ```
 
-#### 设备管理
+#### Quản lý thiết bị
 
-**心跳检测**
+**Nhịp tim**
 
 ```http
 POST /api/client/heartbeat
@@ -266,7 +266,7 @@ Authorization: Bearer <token>
 }
 ```
 
-**系统信息上报**
+**Báo cáo thông tin hệ thống**
 
 ```http
 POST /api/client/sysinfo
@@ -284,30 +284,30 @@ Authorization: Bearer <token>
 }
 ```
 
-**获取设备列表**
+**Lấy danh sách thiết bị**
 
 ```http
 GET /api/client/peers
 Authorization: Bearer <token>
 ```
 
-#### 地址簿管理
+#### Quản lý sổ địa chỉ
 
-**获取地址簿列表**
+**Lấy danh sách sổ địa chỉ**
 
 ```http
 GET /api/client/ab
 Authorization: Bearer <token>
 ```
 
-**获取个人地址簿**
+**Lấy sổ địa chỉ cá nhân**
 
 ```http
 GET /api/client/ab/personal
 Authorization: Bearer <token>
 ```
 
-**添加设备到地址簿**
+**Thêm thiết bị vào sổ địa chỉ**
 
 ```http
 POST /api/client/ab/peer/add/{guid}
@@ -319,7 +319,7 @@ Authorization: Bearer <token>
 }
 ```
 
-**更新设备信息**
+**Cập nhật thông tin thiết bị**
 
 ```http
 PUT /api/client/ab/peer/update/{guid}
@@ -331,21 +331,21 @@ Authorization: Bearer <token>
 }
 ```
 
-**删除设备**
+**Xóa thiết bị**
 
 ```http
 DELETE /api/client/ab/peer/{guid}?peer_id={peer_id}
 Authorization: Bearer <token>
 ```
 
-**获取标签列表**
+**Lấy danh sách thẻ**
 
 ```http
 GET /api/client/ab/tags/{guid}
 Authorization: Bearer <token>
 ```
 
-**添加/更新标签**
+**Thêm/Cập nhật thẻ**
 
 ```http
 POST /api/client/ab/tag/add/{guid}
@@ -357,7 +357,7 @@ Authorization: Bearer <token>
 }
 ```
 
-**重命名标签**
+**Đổi tên thẻ**
 
 ```http
 PUT /api/client/ab/tag/rename/{guid}
@@ -369,269 +369,269 @@ Authorization: Bearer <token>
 }
 ```
 
-#### 审计日志
+#### Nhật ký kiểm toán
 
-**获取连接日志**
+**Lấy nhật ký kết nối**
 
 ```http
 GET /api/client/audit/conn
 Authorization: Bearer <token>
 ```
 
-**获取文件传输日志**
+**Lấy nhật ký chuyển tập tin**
 
 ```http
 GET /api/client/audit/file
 Authorization: Bearer <token>
 ```
 
-### Web 管理 API
+### API quản lý Web
 
-#### 认证
+#### Xác thực
 
 ```http
 POST /web/login
 GET  /web/logout
 ```
 
-#### 设备管理
+#### Quản lý thiết bị
 
 ```http
-GET  /web/home                    # 首页
-POST /web/device/rename-alias     # 重命名设备
-GET  /web/device/detail           # 设备详情
-POST /web/device/update           # 更新设备
-GET  /web/device/statuses         # 设备状态
+GET  /web/home                    # Trang chủ
+POST /web/device/rename-alias     # Đổi tên thiết bị
+GET  /web/device/detail           # Chi tiết thiết bị
+POST /web/device/update           # Cập nhật thiết bị
+GET  /web/device/statuses         # Trạng thái thiết bị
 ```
 
-#### 用户管理
+#### Quản lý người dùng
 
 ```http
-POST /web/user/create             # 创建用户
-POST /web/user/update             # 更新用户
-POST /web/user/reset-password     # 重置密码
-POST /web/user/delete             # 删除用户
+POST /web/user/create             # Tạo người dùng
+POST /web/user/update             # Cập nhật người dùng
+POST /web/user/reset-password     # Đặt lại mật khẩu
+POST /web/user/delete             # Xóa người dùng
 ```
 
-#### 地址簿管理
+#### Quản lý sổ địa chỉ
 
 ```http
-GET  /web/personal/list           # 地址簿列表
-POST /web/personal/create         # 创建地址簿
-POST /web/personal/delete         # 删除地址簿
-POST /web/personal/rename         # 重命名地址簿
-GET  /web/personal/detail         # 地址簿详情
-POST /web/personal/add-device     # 添加设备
-POST /web/personal/remove-device  # 移除设备
-POST /web/personal/update-alias   # 更新别名
-POST /web/personal/update-tags    # 更新标签
+GET  /web/personal/list           # Danh sách sổ địa chỉ
+POST /web/personal/create         # Tạo sổ địa chỉ
+POST /web/personal/delete         # Xóa sổ địa chỉ
+POST /web/personal/rename         # Đổi tên sổ địa chỉ
+GET  /web/personal/detail         # Chi tiết sổ địa chỉ
+POST /web/personal/add-device     # Thêm thiết bị
+POST /web/personal/remove-device  # Xóa thiết bị
+POST /web/personal/update-alias   # Cập nhật bí danh
+POST /web/personal/update-tags    # Cập nhật thẻ
 ```
 
-## 💾 数据库模型
+## 💾 Mô hình cơ sở dữ liệu
 
-### 核心模型
+### Mô hình cốt lõi
 
-| 模型              | 说明              |
-|-----------------|-----------------|
-| `User`          | 用户账户（Django 内置） |
-| `Token`         | 用户认证令牌          |
-| `HeartBeat`     | 客户端心跳记录         |
-| `PeerInfo`      | 客户端系统信息         |
-| `Personal`      | 地址簿             |
-| `Tag`           | 设备标签            |
-| `ClientTags`    | 设备标签关联          |
-| `Alias`         | 设备别名            |
-| `LoginClient`   | 登录客户端记录         |
-| `Log`           | 操作日志            |
-| `AutidConnLog`  | 连接审计日志          |
-| `AuditFileLog`  | 文件传输审计日志        |
-| `UserPrefile`   | 用户配置            |
-| `UserPersonal`  | 用户地址簿关联         |
-| `PeerPersonal`  | 设备地址簿关联         |
-| `SharePersonal` | 地址簿分享记录         |
-| `UserConfig`    | 用户配置项           |
+| Mô hình         | Mô tả                            |
+|-----------------|----------------------------------|
+| `User`          | Tài khoản người dùng (Django)    |
+| `Token`         | Mã xác thực người dùng           |
+| `HeartBeat`     | Hồ sơ nhịp tim máy khách         |
+| `PeerInfo`      | Thông tin hệ thống máy khách     |
+| `Personal`      | Sổ địa chỉ                       |
+| `Tag`           | Thẻ thiết bị                     |
+| `ClientTags`    | Liên kết thẻ thiết bị            |
+| `Alias`         | Bí danh thiết bị                 |
+| `LoginClient`   | Hồ sơ khách hàng đăng nhập       |
+| `Log`           | Nhật ký hoạt động                |
+| `AutidConnLog`  | Nhật ký kiểm toán kết nối        |
+| `AuditFileLog`  | Nhật ký kiểm toán chuyển tập tin |
+| `UserPrefile`   | Hồ sơ người dùng                 |
+| `UserPersonal`  | Liên kết sổ địa chỉ người dùng   |
+| `PeerPersonal`  | Liên kết sổ địa chỉ thiết bị     |
+| `SharePersonal` | Hồ sơ chia sẻ sổ địa chỉ         |
+| `UserConfig`    | Mục cấu hình người dùng          |
 
-### 数据库关系
+### Quan hệ cơ sở dữ liệu
 
 ```
-User (用户)
-  ├─→ Token (令牌)
-  ├─→ Personal (地址簿)
-  ├─→ ClientTags (设备标签)
-  ├─→ LoginClient (登录客户端)
-  └─→ UserConfig (用户配置)
+User
+  ├─→ Token
+  ├─→ Personal
+  ├─→ ClientTags
+  ├─→ LoginClient
+  └─→ UserConfig
 
-PeerInfo (设备信息)
-  ├─→ HeartBeat (心跳)
-  ├─→ PeerPersonal (地址簿关联)
-  ├─→ Alias (别名)
-  ├─→ AutidConnLog (连接日志)
-  └─→ AuditFileLog (文件日志)
+PeerInfo
+  ├─→ HeartBeat
+  ├─→ PeerPersonal
+  ├─→ Alias
+  ├─→ AutidConnLog
+  └─→ AuditFileLog
 
-Personal (地址簿)
-  ├─→ UserPersonal (用户关联)
-  ├─→ PeerPersonal (设备关联)
-  └─→ SharePersonal (分享记录)
+Personal
+  ├─→ UserPersonal
+  ├─→ PeerPersonal
+  └─→ SharePersonal
 ```
 
-## 🔧 开发指南
+## 🔧 Hướng dẫn phát triển
 
-### 本地开发
+### Phát triển cục bộ
 
-1. **启用调试模式**
+1. **Bật chế độ gỡ lỗi**
 
 ```bash
 export DEBUG=True
 ```
 
-2. **运行开发服务器**
+2. **Chạy máy chủ phát triển**
 
 ```bash
 python manage.py runserver
 ```
 
-3. **访问调试工具**
+3. **Truy cập công cụ gỡ lỗi**
 
-访问 `http://localhost:8000/__debug__/` 查看 Django Debug Toolbar
+Truy cập `http://localhost:8000/__debug__/` để xem Thanh công cụ gỡ lỗi Django
 
-### 创建管理命令
+### Tạo lệnh quản lý
 
-在 `apps/commands/management/commands/` 目录下创建新命令：
+Tạo lệnh mới trong `apps/commands/management/commands/`:
 
 ```python
 from django.core.management.base import BaseCommand
 
 class Command(BaseCommand):
-    help = '命令描述'
+    help = 'Mô tả lệnh'
     
     def handle(self, *args, **options):
-        # 命令逻辑
+        # Logic lệnh
         pass
 ```
 
-运行命令：
+Chạy lệnh:
 
 ```bash
 python manage.py your_command
 ```
 
-### 数据库迁移
+### Di chuyển cơ sở dữ liệu
 
 ```bash
-# 创建迁移文件
+# Tạo tập tin di chuyển
 python manage.py makemigrations
 
-# 应用迁移
+# Áp dụng di chuyển
 python manage.py migrate
 
-# 查看迁移状态
+# Xem trạng thái di chuyển
 python manage.py showmigrations
 ```
 
-### 代码规范
+### Tiêu chuẩn mã
 
-- 使用 reStructuredText 格式编写函数注释
-- 遵循 PEP 8 代码规范
-- 确保跨平台兼容性（Windows、macOS、Linux）
+- Sử dụng định dạng reStructuredText cho nhận xét hàm
+- Tuân theo tiêu chuẩn mã PEP 8
+- Đảm bảo tương thích đa nền tảng (Windows, macOS, Linux)
 
-## ❓ 常见问题
+## ❓ Câu hỏi thường gặp
 
-### 1. 数据库锁定错误
+### 1. Lỗi khóa cơ sở dữ liệu
 
-**问题**: SQLite 出现数据库锁定错误
+**Vấn đề**: Lỗi khóa cơ sở dữ liệu SQLite
 
-**解决方案**:
+**Giải pháp**:
 
-- 使用 MySQL 或 PostgreSQL
-- 减少并发写入操作
-- 调整 `WORKERS` 和 `THREADS` 参数
+- Sử dụng MySQL hoặc PostgreSQL
+- Giảm các thao tác ghi đồng thời
+- Điều chỉnh tham số `WORKERS` và `THREADS`
 
-### 2. 会话过期问题
+### 2. Hết hạn phiên
 
-**问题**: 用户频繁需要重新登录
+**Vấn đề**: Người dùng cần đăng nhập thường xuyên
 
-**解决方案**:
+**Giải pháp**:
 
 ```bash
-# 增加会话超时时间（秒）
-export SESSION_TIMEOUT=86400  # 24小时
+# Tăng thời gian chờ phiên (giây)
+export SESSION_TIMEOUT=86400  # 24 giờ
 ```
 
-### 3. 跨域问题
+### 3. Vấn đề CORS
 
-**问题**: Web 管理界面无法访问 API
+**Vấn đề**: Giao diện quản trị Web không thể truy cập API
 
-**解决方案**:
+**Giải pháp**:
 
-- 确保使用相同的域名和端口
-- 配置 CORS 中间件（如需要）
+- Đảm bảo sử dụng cùng miền và cổng
+- Cấu hình middleware CORS (nếu cần)
 
-### 4. Docker 容器无法启动
+### 4. Docker Container không khởi động
 
-**问题**: Docker 容器启动失败
+**Vấn đề**: Docker container không khởi động được
 
-**解决方案**:
+**Giải pháp**:
 
 ```bash
-# 查看日志
+# Xem nhật ký
 docker logs rustdesk_api
 
-# 重新构建
+# Xây dựng lại
 docker-compose down
 docker-compose up --build
 ```
 
-### 5. 静态文件无法加载
+### 5. Tập tin tĩnh không tải
 
-**问题**: CSS/JS 文件 404
+**Vấn đề**: Tập tin CSS/JS trả về 404
 
-**解决方案**:
+**Giải pháp**:
 
 ```bash
-# 重新收集静态文件
+# Thu thập lại tập tin tĩnh
 python manage.py collectstatic --noinput
 ```
 
-## 🤝 贡献指南
+## 🤝 Đóng góp
 
-我们欢迎任何形式的贡献！
+Chúng tôi hoan nghênh mọi hình thức đóng góp!
 
-### 贡献流程
+### Quy trình đóng góp
 
-1. Fork 本仓库
-2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 开启 Pull Request
+1. Fork kho lưu trữ này
+2. Tạo nhánh tính năng (`git checkout -b feature/AmazingFeature`)
+3. Commit thay đổi của bạn (`git commit -m 'Add some AmazingFeature'`)
+4. Push lên nhánh (`git push origin feature/AmazingFeature`)
+5. Mở Pull Request
 
-### 开发规范
+### Tiêu chuẩn phát triển
 
-- 编写清晰的提交信息
-- 添加必要的测试
-- 更新相关文档
-- 确保代码通过 linting 检查
+- Viết tin nhắn commit rõ ràng
+- Thêm các bài kiểm tra cần thiết
+- Cập nhật tài liệu liên quan
+- Đảm bảo mã vượt qua kiểm tra linting
 
-## 📄 许可证
+## 📄 Giấy phép
 
-本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
+Dự án này được cấp phép theo Giấy phép MIT - xem tập tin [LICENSE](LICENSE) để biết chi tiết.
 
-## 🙏 致谢
+## 🙏 Lời cảm ơn
 
-- [RustDesk](https://github.com/rustdesk/rustdesk) - 优秀的远程桌面软件
-- [Django](https://www.djangoproject.com/) - 强大的 Web 框架
-- 所有贡献者
+- [RustDesk](https://github.com/rustdesk/rustdesk) - Phần mềm máy tính từ xa tuyệt vời
+- [Django](https://www.djangoproject.com/) - Khung web mạnh mẽ
+- Tất cả những người đóng góp
 
-## 📮 联系方式
+## 📮 Liên hệ
 
-- 作者: 御风
-- Issues: [GitHub Issues](https://github.com/JokerYF/rustdesk_api/issues)
+- Tác giả: 御风
+- Vấn đề: [GitHub Issues](https://github.com/JokerYF/rustdesk_api/issues)
 
 ---
 
 <div align="center">
 
-Made with ❤️ by 御风
+Được làm với ❤️ bởi 御风
 
-[English](./README_EN.md) | 中文
+[English](./README_EN.md) | [中文](./README.md)
 
 </div>
