@@ -35,12 +35,16 @@ def check_login(func):
 
         system_info = PeerInfoService()
         client_info = system_info.get_peer_info_by_uuid(uuid)
+        if not client_info:
+            logger.warning('check_login: no client_info for uuid=%s', uuid)
+        peer_id = client_info.peer_id if client_info else (body.get('id') if isinstance(body, dict) else '')
+        username = user_info.username if hasattr(user_info, 'username') else (user_info or '')
         if not token_service.check_token(token, timeout=3600):
             # Server端记录登录信息
             LoginClientService().update_logout_status(
                 uuid=uuid,
-                username=user_info.username,
-                peer_id=client_info.peer_id,
+                username=username,
+                peer_id=peer_id,
             )
             return JsonResponse({'error': 'Invalid token'}, status=401)
         token_service.update_token(token)

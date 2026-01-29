@@ -136,6 +136,17 @@ def login(request: HttpRequest):
     client_type = device_info.get('type')
     client_name = device_info.get('name')
 
+    safe_body = dict(body)
+    if 'password' in safe_body:
+        safe_body['password'] = '***'
+    logger.info(
+        'login request: username="%s", uuid="%s", peer_id="%s", body=%s',
+        username,
+        uuid,
+        body.get('id'),
+        safe_body,
+    )
+
     try:
         user = UserService().get_user_by_name(username=username)
         assert user and user.check_password(password)
@@ -162,30 +173,36 @@ def login(request: HttpRequest):
     #     log_message=f'用户 {username} 登录'
     # )
 
-    return JsonResponse(
-        {
-            'access_token': token,
-            'type': 'access_token',
-            'user': {
-                'name': username,
-            }
+    response_payload = {
+        'access_token': token,
+        'type': 'access_token',
+        'user': {
+            'name': username,
         }
+    }
+    logger.info(
+        'login response: username="%s", token_len=%s',
+        username,
+        len(token) if token else 0,
     )
+    return JsonResponse(response_payload)
 
 
 @request_debug_log
-@require_http_methods(["POST"])
+@require_http_methods(["GET", "POST"])
 def login_options(request: HttpRequest):
     """
     Trả về cấu hình RustDesk server cho client.
     Client cần thông tin này để kết nối đến ID/Relay server.
     """
-    return JsonResponse({
+    response_payload = {
         'id_server': getattr(settings, 'RUSTDESK_ID_SERVER', ''),
         'relay_server': getattr(settings, 'RUSTDESK_RELAY_SERVER', ''),
         'api_server': getattr(settings, 'RUSTDESK_API_SERVER', ''),
         'key': getattr(settings, 'RUSTDESK_KEY', ''),
-    })
+    }
+    logger.info('login_options response: %s', response_payload)
+    return JsonResponse(response_payload)
 
 
 @request_debug_log

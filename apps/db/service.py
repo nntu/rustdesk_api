@@ -796,7 +796,8 @@ class AuditConnService(BaseService):
         :return:
         """
         if username:
-            user_id = self.get_user_info(username).id
+            user_info = self.get_user_info(username)
+            user_id = user_info.id if user_info else ''
         else:
             user_id = ''
         if action:
@@ -1039,7 +1040,17 @@ class SharePersonalService(BaseService):
         )
 
     def get_user_personals(self):
-        group_id = self.user.userprofile.group_id
+        profile = getattr(self.user, "userprofile", None)
+        if not profile:
+            group = GroupService().default_group()
+            profile, _ = UserPrefile.objects.get_or_create(
+                user=self.user,
+                defaults={"group": group},
+            )
+            if profile.group_id is None:
+                profile.group = group
+                profile.save(update_fields=["group"])
+        group_id = profile.group_id
         personal_ids = self.db.objects.filter(
             to_share_id__in=(self.user.id, group_id),
             to_share_type__in=(1, 2),
