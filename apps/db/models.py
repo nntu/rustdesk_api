@@ -239,6 +239,33 @@ class AuditFileLog(models.Model):
         db_table = 'audit_file'
 
 
+class OidcAuth(models.Model):
+    """
+    OIDC 设备码授权记录
+    """
+    code = models.CharField(max_length=64, unique=True, verbose_name='Mã xác thực')
+    op = models.CharField(max_length=255, verbose_name='Nhà cung cấp OIDC')
+    peer_id = models.CharField(max_length=255, verbose_name='ID máy khách')
+    uuid = models.CharField(max_length=255, verbose_name='UUID thiết bị')
+    device_info = models.TextField(verbose_name='Thông tin thiết bị', null=True, default='')
+    status = models.CharField(
+        max_length=20,
+        verbose_name='Trạng thái',
+        choices=[('pending', 'Đang chờ'), ('approved', 'Đã xác thực'), ('expired', 'Hết hạn')],
+        default='pending',
+    )
+    access_token = models.CharField(max_length=255, verbose_name='Mã thông báo', null=True, blank=True)
+    user_id = models.ForeignKey(User, to_field='id', on_delete=models.CASCADE, null=True, blank=True,
+                                verbose_name='Tên người dùng')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Thời gian tạo')
+    expires_at = models.DateTimeField(verbose_name='Thời gian hết hạn')
+
+    class Meta:
+        verbose_name = 'OIDC xác thực'
+        verbose_name_plural = verbose_name
+        db_table = 'oidc_auth'
+        ordering = ['-created_at']
+
 class UserPrefile(models.Model):
     """
     用户配置模型

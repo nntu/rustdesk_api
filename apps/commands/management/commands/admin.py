@@ -8,7 +8,7 @@ from common.utils import str2bool
 
 
 class Command(BaseCommand):
-    help = '管理员操作'
+    help = 'Thao tác quản trị viên'
 
     user_service = UserService()
     group_service = GroupService()
@@ -21,37 +21,37 @@ class Command(BaseCommand):
         parser.add_argument(
             '--init',
             action='store_true',
-            help='初始化管理员账号',
+            help='Khởi tạo tài khoản quản trị',
         )
 
         parser.add_argument(
             '--user',
             type=str,
-            help='指定用户名',
+            help='Chỉ định tên người dùng',
         )
 
         parser.add_argument(
             '--passwd',
             type=str,
-            help='指定用户密码',
+            help='Chỉ định mật khẩu người dùng',
         )
 
         parser.add_argument(
             '--group',
             type=str,
-            help='指定用户组',
+            help='Chỉ định nhóm người dùng',
         )
 
         parser.add_argument(
             '--personal',
             type=str,
-            help='创建一个地址簿',
+            help='Tạo một danh bạ',
         )
 
         parser.add_argument(
             '--is-admin',
             type=str,
-            help='是否为管理员',
+            help='Là quản trị viên',
         )
 
     def handle(self, *args, **options):
@@ -70,9 +70,9 @@ class Command(BaseCommand):
                     is_superuser=True,
                     is_staff=True
                 )
-                print(f'管理员账号初始化成功，管理员密码：{pwd}')
+                print(f'Khởi tạo tài khoản quản trị thành công, mật khẩu: {pwd}')
             else:
-                print('管理员账号已存在')
+                print('Tài khoản quản trị đã tồn tại')
 
         elif options.get('user'):
             username = options.get('user')
@@ -83,18 +83,18 @@ class Command(BaseCommand):
                 if password:
                     user = self.user_service.set_password(password=password, username=username)
                     TokenService().delete_token_by_user(user.username)
-                    print(f'用户 {username} 已存在，已更新密码 {password}')
+                    print(f'Người dùng {username} đã tồn tại, đã cập nhật mật khẩu {password}')
                 if is_admin:
                     user = self.user_service.get_user_by_name(username)
                     if not user:
                         raise UserNotFoundError
                     user.is_staff = True
                     user.save()
-                    print(f'用户 {username} 已存在，已更新为管理员')
+                    print(f'Người dùng {username} đã tồn tại, đã cập nhật thành quản trị viên')
             except (ValueError, UserNotFoundError):
                 if self.user_service.db.objects.count() == 0:
                     is_admin = True
-                    print('由于当前用户列表为空，初始化当前用户为管理员')
+                    print('Do danh sách người dùng trống, khởi tạo người dùng này làm quản trị viên')
                 self.user_service.create_user(
                     username=username,
                     password=password,
@@ -102,7 +102,7 @@ class Command(BaseCommand):
                     is_superuser=False,
                     is_staff=is_admin
                 )
-                print(f'用户 {username} 创建成功，密码 {password}')
+                print(f'Tạo người dùng {username} thành công, mật khẩu {password}')
 
         elif options.get('group') and options.get('user'):
             group_name = options.get('group')
@@ -116,9 +116,9 @@ class Command(BaseCommand):
             try:
                 PersonalService().create_personal(personal_name=personal, create_user=user, personal_type='public')
             except Exception as e:
-                print(f'当前已存在 Personal: {personal}')
+                print(f'Danh bạ đã tồn tại: {personal}')
         else:
-            print('参数错误')
+            print('Tham số không hợp lệ')
 
     @property
     def get_admin_user(self):

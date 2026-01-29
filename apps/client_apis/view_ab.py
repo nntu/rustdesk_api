@@ -228,7 +228,7 @@ def ab_peer_add(request, guid):
         return HttpResponse(status=200)
     except:
         return JsonResponse(
-            {'error': 'Add peer to personal failed'}
+            {'error': 'Thêm thiết bị vào danh bạ thất bại'}
         )
 
 
