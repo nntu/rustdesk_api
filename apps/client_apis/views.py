@@ -29,10 +29,10 @@ OIDC_TIMEOUT_SECONDS = 180
 @require_http_methods(["GET"])
 def time_test(request: HttpRequest):
     """
-    测试时间存储是否使用服务器本地时间
+    Kiểm tra lưu thời gian có dùng giờ server
 
-    :param request: HTTP请求对象
-    :return: 包含当前时间和时区信息的JSON响应
+    :param request: Đối tượng HTTP request
+    :return: JSON chứa thời gian hiện tại và múi giờ
     """
     now = timezone.now()
     local_time = timezone.localtime(now)
@@ -98,7 +98,7 @@ def sysinfo(request: HttpRequest):
         return JsonResponse({'error': 'Invalid request body'}, status=400)
     uuid = body.get('uuid')
 
-    # 先更新设备信息
+    # Cập nhật thông tin thiết bị trước
     PeerInfoService().update(
         uuid=uuid,
         peer_id=body.get('id'),
@@ -110,8 +110,8 @@ def sysinfo(request: HttpRequest):
         version=body.get('version'),
     )
 
-    # 如果当前设备登录过，则更新token
-    # 这里有个问题，这里更新没有校验token有效期，服务器停机好几个小时后启动，还是会刷新token，没想好这块逻辑，先这样
+    # Nếu thiết bị đã từng đăng nhập thì cập nhật token
+    # Vấn đề: chưa kiểm tra hạn token; server dừng vài giờ rồi chạy lại vẫn refresh token, tạm thời giữ vậy
     TokenService(request=request).update_token_by_uuid(uuid)
 
     return HttpResponse("SYSINFO_UPDATED", status=200)
@@ -121,9 +121,9 @@ def sysinfo(request: HttpRequest):
 @require_http_methods(["POST"])
 def login(request: HttpRequest):
     """
-    处理用户登录请求
-    :param request: HTTP请求对象
-    :return: JSON响应对象
+    Xử lý yêu cầu đăng nhập
+    :param request: Đối tượng HTTP request
+    :return: JSON response
     """
     token_service = TokenService(request=request)
     body = token_service.request_body
@@ -132,7 +132,7 @@ def login(request: HttpRequest):
     password = body.get('password')
     uuid = body.get('uuid')
     device_info = body.get('deviceInfo', {})
-    platform = device_info.get('os')  # 设备端别
+    platform = device_info.get('os')  # Hệ điều hành thiết bị
     client_type = device_info.get('type')
     client_name = device_info.get('name')
 
@@ -147,16 +147,14 @@ def login(request: HttpRequest):
         safe_body,
     )
 
-    try:
-        user = UserService().get_user_by_name(username=username)
-        assert user and user.check_password(password)
-    except AssertionError:
-        logger.error(traceback.format_exc())
+    user = UserService().get_user_by_name(username=username)
+    if not user or not user.check_password(password):
+        logger.warning('login failed: username="%s"', username)
         return JsonResponse({'error': 'Tên đăng nhập hoặc mật khẩu không đúng'})
 
     token = token_service.create_token(username, uuid)
 
-    # Server端记录登录信息
+    # Ghi thông tin đăng nhập ở server
     LoginClientService().update_login_status(
         uuid=uuid,
         username=user,
@@ -170,7 +168,7 @@ def login(request: HttpRequest):
     #     username=username,
     #     uuid=uuid,
     #     log_type='login',
-    #     log_message=f'用户 {username} 登录'
+    #     log_message=f'Người dùng {username} đăng nhập'
     # )
 
     response_payload = {
@@ -218,7 +216,7 @@ def logout(request: HttpRequest):
 
     token_service.delete_token(token)
 
-    # 更新登出状态
+    # Cập nhật trạng thái đăng xuất
     LoginClientService().update_logout_status(
         uuid=uuid,
         username=user_info,
@@ -229,7 +227,7 @@ def logout(request: HttpRequest):
     #     username=user_info,
     #     uuid=uuid,
     #     log_type='logout',
-    #     log_message=f'用户 {user_info} 退出登录'
+    #     log_message=f'Người dùng {user_info} đăng xuất'
     # )
     return JsonResponse({'code': 1})
 
@@ -239,7 +237,7 @@ def logout(request: HttpRequest):
 @check_login
 def current_user(request: HttpRequest):
     """
-    获取当前用户信息
+    Lấy thông tin người dùng hiện tại
     :param request:
     :return:
     """
@@ -261,7 +259,7 @@ def current_user(request: HttpRequest):
 @check_login
 def users(request: HttpRequest):
     """
-    获取所有用户信息
+    Lấy thông tin tất cả người dùng
     :param request:
     :return:
     """
@@ -299,13 +297,13 @@ def users(request: HttpRequest):
 @check_login
 def peers(request: HttpRequest):
     """
-    展示当前用户可以看到的设备信息
-    当前如果是管理员，则可以看到全部（包括未登录的设备）
-    如果是用户，则默认只能看到自己登录的设备
+    Hiển thị thiết bị người dùng hiện tại có thể thấy
+    Nếu là admin thì thấy tất cả (kể cả thiết bị chưa đăng nhập)
+    Nếu là user thì mặc định chỉ thấy thiết bị mình đăng nhập
     :param request:
     :return:
     """
-    # TODO 这里有一个问题，这里需要按照用户展示设备信息，当前只展示登录用户的信息
+    # TODO: cần hiển thị theo người dùng, hiện chỉ hiển thị user đăng nhập
 
     token_service = TokenService(request=request)
     user_info = token_service.user_info
@@ -337,11 +335,11 @@ def peers(request: HttpRequest):
 
 @request_debug_log
 @require_http_methods(["GET"])
-@debug_response_None  # 官方对于设备组有权限控制，目前无法控制，直接返回None，接口不报错即可
+@debug_response_None  # Chính thức có phân quyền nhóm thiết bị, tạm trả None để tránh lỗi
 @check_login
 def device_group_accessible(request):
     """
-    admin获取当前服务端所有设备信息
+    Admin lấy toàn bộ thiết bị trên server
     :param request:
     :return:
     """

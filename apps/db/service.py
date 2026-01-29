@@ -30,15 +30,15 @@ from common.utils import get_local_time, get_randem_md5
 
 logger = logging.getLogger(__name__)
 
-# 定义泛型类型变量，用于表示各种模型类型
+# Định nghĩa biến kiểu generic cho các model
 ModelType = TypeVar("ModelType", bound=models.Model)
 
 
 class BaseService:
     """
-    数据服务基类
+    Lớp cơ sở dịch vụ dữ liệu
 
-    :param db: 需要操作的模型类
+    :param db: Model cần thao tác
     """
 
     db: models.Model = None
@@ -76,7 +76,7 @@ class UserService(BaseService):
             'username__in': [*users],
             'is_active': is_active
         }
-        if is_active is None:  # 管理员查询时，如果为None，则可以拉取全部信息
+        if is_active is None:  # Admin truy vấn: None => lấy toàn bộ
             _filter.pop('is_active')
         return self.db.objects.filter(**_filter).all()
 
@@ -99,13 +99,13 @@ class UserService(BaseService):
         )
         user.set_password(password)
         user.save()
-        logger.info(f"创建用户: {user}")
+        logger.info(f"Tạo người dùng: {user}")
 
-        # 添加用户到组（确保参数顺序正确）
+        # Thêm người dùng vào nhóm (đảm bảo đúng thứ tự tham số)
         group_service = GroupService()
         group_service.add_user_to_group(user, group_name=group)
 
-        # 添加一个个人地址簿
+        # Tạo một sổ địa chỉ cá nhân
         PersonalService().create_self_personal(user)
 
         return user
@@ -147,22 +147,22 @@ class UserService(BaseService):
             raise UserNotFoundError(email or username)
         user.set_password(password)
         user.save()
-        logger.info(f"设置用户密码: {user}")
+        logger.info(f"Thiết lập mật khẩu người dùng: {user}")
         return user
 
     def delete_user(self, *usernames):
         self.db.objects.filter(username__in=[*usernames]).update(is_active=False)
-        logger.info(f"删除用户: {usernames}")
+        logger.info(f"Xóa người dùng: {usernames}")
 
     def __get_list(self, **kwargs):
         """
-        通用分页查询方法
+        Phương thức phân trang dùng chung
 
-        :param filters: 查询条件字典
-        :param ordering: 排序字段列表
-        :param page: 当前页码
-        :param page_size: 每页记录数
-        :return: 包含分页信息的字典
+        :param filters: Dict điều kiện truy vấn
+        :param ordering: Danh sách trường sắp xếp
+        :param page: Trang hiện tại
+        :param page_size: Số bản ghi mỗi trang
+        :return: Dict chứa thông tin phân trang
         """
         page = int(kwargs.pop("page", 1))
         page_size = int(kwargs.pop("page_size", 10))
@@ -215,12 +215,12 @@ class GroupService(BaseService):
             permissions = []
         group = self.db.objects.create(name=name)
         group.permissions.add(*permissions)
-        logger.info(f"创建用户组: {group}")
+        logger.info(f"Tạo nhóm người dùng: {group}")
         return group
 
     def default_group(self):
         """
-        创建默认用户组
+        Tạo nhóm người dùng mặc định
         :return:
         """
         group = self.get_group_by_name(self.default_group_name)
@@ -230,13 +230,14 @@ class GroupService(BaseService):
 
     def add_user_to_group(self, *username: User | str, group_name: Group | str = None):
         """
-        为用户设置所在组（高效批量）。
+        Gán nhóm cho người dùng (batch hiệu quả).
 
-        通过一次性查询现有 `UserPrefile`，区分需要更新与新建的记录，分别使用
-        `bulk_update` 与 `bulk_create`，显著减少 SQL 次数，确保“用户仅一个组”。
+        Truy vấn một lần `UserPrefile` hiện có, tách bản ghi cần update/tạo mới,
+        dùng `bulk_update` và `bulk_create` để giảm số câu lệnh SQL, đảm bảo
+        “mỗi người dùng chỉ thuộc một nhóm”.
 
-        :param username: 用户对象或用户名字符串，可变参数，支持批量
-        :param group_name: 目标组对象或组名字符串；为空则加入默认组
+        :param username: User object hoặc tên người dùng (hỗ trợ nhiều giá trị)
+        :param group_name: Nhóm đích hoặc tên nhóm; rỗng thì dùng nhóm mặc định
         :returns: None
         """
         group_name = group_name or self.default_group_name
@@ -261,7 +262,7 @@ class GroupService(BaseService):
         user_ids = [u.id for u in user_objs]
 
         with transaction.atomic():
-            # 一次性读取已有的 Profile
+            # Đọc một lần các Profile đã có
             existing_profiles = UserPrefile.objects.filter(user_id__in=user_ids)
             user_id_to_profile = {p.user_id: p for p in existing_profiles}
 
@@ -279,10 +280,10 @@ class GroupService(BaseService):
 
             if to_update:
                 UserPrefile.objects.bulk_update(to_update, ["group"])
-                # logger.info(f"更新用户组: {to_update}")
+                # logger.info(f"Cập nhật nhóm người dùng: {to_update}")
             if to_create:
                 UserPrefile.objects.bulk_create(to_create)
-                # logger.info(f"创建用户组: {to_create}")
+                # logger.info(f"Tạo nhóm người dùng: {to_create}")
 
 
 class PeerInfoService(BaseService):
@@ -296,11 +297,11 @@ class PeerInfoService(BaseService):
 
     def update(self, uuid: str, **kwargs):
         """
-        创建或更新系统信息
+        Tạo hoặc cập nhật thông tin hệ thống
 
-        :param uuid: 设备唯一标识
-        :param kwargs: 系统信息字段
-        :return: (created, object)元组
+        :param uuid: Mã định danh thiết bị
+        :param kwargs: Các trường thông tin hệ thống
+        :return: Tuple (created, object)
         """
         kwargs["uuid"] = uuid
         peer_id = kwargs.get("peer_id")
@@ -308,7 +309,7 @@ class PeerInfoService(BaseService):
         if not self.db.objects.filter(Q(uuid=uuid) | Q(peer_id=peer_id)).update(**kwargs):
             self.db.objects.create(**kwargs)
 
-        logger.info(f"更新设备信息: {kwargs}")
+        logger.info(f"Cập nhật thông tin thiết bị: {kwargs}")
 
     def get_list(self):
         return self.db.objects.all()
@@ -322,10 +323,10 @@ class HeartBeatService(BaseService):
 
     def update(self, uuid, **kwargs):
         """
-        更新或创建心跳记录
+        Cập nhật hoặc tạo bản ghi heartbeat
 
-        :param uuid: 设备UUID
-        :param kwargs: 需要更新的字段，如 peer_id、ver 等
+        :param uuid: UUID thiết bị
+        :param kwargs: Trường cần cập nhật, ví dụ peer_id, ver...
         :returns:
         """
         kwargs["modified_at"] = get_local_time()
@@ -335,7 +336,7 @@ class HeartBeatService(BaseService):
 
         if not self.db.objects.filter(Q(uuid=uuid) | Q(peer_id=peer_id)).update(**kwargs):
             self.db.objects.create(**kwargs)
-        logger.info(f"更新心跳: {kwargs}")
+        logger.info(f"Cập nhật heartbeat: {kwargs}")
 
     def is_alive(self, uuid, timeout=60):
         client = self.db.objects.filter(uuid=uuid).first()
@@ -346,9 +347,9 @@ class HeartBeatService(BaseService):
 
 class LoginClientService(BaseService):
     """
-    登录客户端服务类
+    Dịch vụ client đăng nhập
 
-    用于处理登录客户端的相关业务逻辑
+    Xử lý logic liên quan đến client đăng nhập
     """
 
     db = LoginClient
@@ -391,32 +392,62 @@ class LoginClientService(BaseService):
                 client_name=client_name,
             )
 
-        logger.info(f"更新登录状态: {username} - {uuid}")
+        logger.info(f"Cập nhật trạng thái đăng nhập: {username} - {uuid}")
 
     def update_logout_status(self, username, uuid, peer_id=None):
         user_qs = self.get_user_info(username)
-        if not self.db.objects.filter(user_id=user_qs.id, uuid=uuid).update(
-                user_id=user_qs,
-                uuid=uuid,
-                peer_id=peer_id,
-                login_status=False,
-        ):
+        if not user_qs or not uuid:
+            logger.warning(
+                "Cập nhật trạng thái đăng xuất thất bại: user=%s uuid=%s peer_id=%s",
+                username,
+                uuid,
+                peer_id,
+            )
+            return
+
+        update_fields = {
+            "user_id": user_qs,
+            "uuid": uuid,
+            "login_status": False,
+        }
+        if peer_id:
+            update_fields["peer_id"] = peer_id
+
+        updated = self.db.objects.filter(user_id=user_qs.id, uuid=uuid).update(**update_fields)
+        if not updated:
             login_qs = self.db.objects.filter(
                 user_id=user_qs,
                 uuid=uuid,
                 login_status=True
             ).first()
+            if not login_qs:
+                logger.warning(
+                    "Cập nhật trạng thái đăng xuất thất bại: không tìm thấy bản ghi đăng nhập user=%s uuid=%s",
+                    username,
+                    uuid,
+                )
+                return
+
+            resolved_peer_id = peer_id or login_qs.peer_id
+            if not resolved_peer_id:
+                logger.warning(
+                    "Cập nhật trạng thái đăng xuất thất bại: thiếu peer_id user=%s uuid=%s",
+                    username,
+                    uuid,
+                )
+                return
+
             self.db.objects.create(
                 user_id=user_qs,
                 uuid=uuid,
-                peer_id=peer_id,
+                peer_id=resolved_peer_id,
                 login_status=False,
                 client_type=login_qs.client_type,
                 platform=login_qs.platform,
                 client_name=login_qs.client_name,
             )
 
-        logger.info(f"更新登出状态: {username} - {uuid}")
+        logger.info(f"Cập nhật trạng thái đăng xuất: {username} - {uuid}")
 
     def get_login_client_list(self, username):
         return self.db.objects.filter(user_id=self.get_user_info(username).id).all()
@@ -424,9 +455,9 @@ class LoginClientService(BaseService):
 
 class TokenService(BaseService):
     """
-    令牌服务类
+    Dịch vụ token
 
-    用于处理令牌相关的业务逻辑
+    Xử lý logic liên quan đến token
     """
 
     db = Token
@@ -436,12 +467,12 @@ class TokenService(BaseService):
 
     def create_token(self, username, uuid, client_type=3):
         """
-        创建令牌
+        Tạo token
 
-        :param username: 用户名
-        :param uuid: 设备UUID
-        :param client_type: 客户端类型 (1, 'web'), (2, 'client'), (3, 'api')
-        :return: 令牌
+        :param username: Tên người dùng
+        :param uuid: UUID thiết bị
+        :param client_type: Loại client (1, 'web'), (2, 'client'), (3, 'api')
+        :return: Token
         """
         assert client_type in [1, 2, 3]
         user_qs = self.get_user_info(username)
@@ -452,7 +483,7 @@ class TokenService(BaseService):
             qs.created_at = get_local_time()
             qs.last_used_at = get_local_time()
             qs.save()
-            logger.info(f"更新令牌: user: {username} uuid: {uuid} token: {token}")
+            logger.info(f"Cập nhật token: user: {username} uuid: {uuid} token: {token}")
         else:
             self.db.objects.create(
                 user_id=user_qs,
@@ -462,7 +493,7 @@ class TokenService(BaseService):
                 created_at=get_local_time(),
                 last_used_at=get_local_time(),
             )
-            logger.info(f"创建令牌: user: {username} uuid: {uuid} token: {token}")
+            logger.info(f"Tạo token: user: {username} uuid: {uuid} token: {token}")
         return token
 
     def check_token(self, token, timeout=3600):
@@ -482,24 +513,24 @@ class TokenService(BaseService):
         if _token := self.db.objects.filter(uuid=uuid).first():
             _token.last_used_at = get_local_time()
             _token.save()
-            logger.info(f"通过uuid更新令牌: {uuid} - {_token.token}")
+            logger.info(f"Cập nhật token theo uuid: {uuid} - {_token.token}")
             return True
         return False
 
     def delete_token(self, token):
         res = self.db.objects.filter(token=token).delete()
-        logger.info(f"删除令牌: {token}")
+        logger.info(f"Xóa token: {token}")
         return res
 
     def delete_token_by_uuid(self, uuid):
         res = self.db.objects.filter(uuid=uuid).delete()
-        logger.info(f"通过uuid删除令牌: {uuid}")
+        logger.info(f"Xóa token theo uuid: {uuid}")
         return res
 
     def delete_token_by_user(self, username: User | str):
         user = self.get_user_info(username)
         res = self.db.objects.filter(user_id=user.id).delete()
-        logger.info(f"通过用户名删除令牌: {username}")
+        logger.info(f"Xóa token theo tên người dùng: {username}")
         return res
 
     @property
@@ -546,9 +577,9 @@ class TokenService(BaseService):
 
 class TagService:
     """
-    标签服务类
+    Dịch vụ nhãn (tag)
 
-    用于处理标签相关的业务逻辑
+    Xử lý logic liên quan đến nhãn (tag)
     """
 
     db_tag = Tag
@@ -561,7 +592,7 @@ class TagService:
 
     def get_tags_by_name(self, *tag_name):
         res = self.db_tag.objects.filter(tag__in=tag_name, guid=self.guid).all()
-        logger.debug(f"获取用户标签: {self.guid} - {tag_name} - {res}")
+        logger.debug(f"Lấy nhãn người dùng: {self.guid} - {tag_name} - {res}")
         return res
 
     def get_tags_by_id(self, *tag_id):
@@ -569,20 +600,20 @@ class TagService:
 
     def create_tag(self, tag, color):
         res = self.db_tag.objects.create(tag=tag, color=color, guid=self.guid)
-        logger.info(f"创建标签: {self.guid} - {tag} - {color}")
+        logger.info(f"Tạo nhãn: {self.guid} - {tag} - {color}")
         return res
 
     def delete_tag(self, *tag):
         """
-        删除指定标签，并在关系表中移除这些标签（单次批量更新）。
+        Xóa nhãn chỉ định và gỡ khỏi bảng quan hệ (bulk update một lần).
 
-        :param str tag: 一个或多个需要删除的标签名
+        :param str tag: Một hoặc nhiều tên nhãn cần xóa
         """
         tags_to_delete = {str(t) for t in tag if t is not None}
         if not tags_to_delete:
             return
 
-        # 遍历一次构造需要更新的实例，最后单次 bulk_update
+        # Duyệt một lần để tạo danh sách update, sau đó bulk_update một lần
         changed_instances = []
         for inst in self.db_client_tags.objects.filter(guid=self.guid).all():
             current_tags = self._parse_tags(inst.tags)
@@ -590,16 +621,16 @@ class TagService:
                 continue
             new_tags = [t for t in current_tags if t not in tags_to_delete]
             if new_tags != current_tags:
-                # 统一以 JSON 格式写回
+                # Ghi lại theo định dạng JSON
                 inst.tags = json.dumps(new_tags)
                 changed_instances.append(inst)
 
         if changed_instances:
             self.db_client_tags.objects.bulk_update(changed_instances, ["tags"])
 
-        # 删除标签本身
+        # Xóa nhãn
         self.db_tag.objects.filter(tag__in=tags_to_delete, guid=self.guid).delete()
-        logger.info(f"删除标签: {self.guid} - {tags_to_delete}")
+        logger.info(f"Xóa nhãn: {self.guid} - {tags_to_delete}")
 
     def update_tag(self, tag, color=None, new_tag=None):
         data = {}
@@ -608,12 +639,12 @@ class TagService:
         if new_tag:
             data["tag"] = new_tag
         res = self.db_tag.objects.filter(tag=tag, guid=self.guid).update(**data)
-        logger.info(f"更新标签: {self.guid} - {data}")
+        logger.info(f"Cập nhật nhãn: {self.guid} - {data}")
         return res
 
     def get_all_tags(self):
         """
-        获取当前用户关联的所有标签
+        Lấy tất cả nhãn liên kết với người dùng hiện tại
 
         :return: QuerySet of Tag objects associated with the current user
         """
@@ -621,11 +652,11 @@ class TagService:
 
     def set_user_tag_by_peer_id(self, peer_id, tags):
         """
-        为指定设备设置标签（覆盖式）。
+        Gán nhãn cho thiết bị (ghi đè).
 
-        :param peer_id: 设备 peer_id
-        :param tags: 标签列表
-        :returns: 更新或创建的记录
+        :param peer_id: peer_id thiết bị
+        :param tags: Danh sách nhãn
+        :returns: Bản ghi được cập nhật hoặc tạo mới
         """
         tag_list = []
         for tag in self.get_tags_by_name(*list(tags)):
@@ -642,26 +673,26 @@ class TagService:
             "guid": self.guid,
         }
         res = self.user.user_tags.create(**kwargs)
-        logger.info(f"设置标签: {self.guid} - {peer_id} - {tag_list if tag_list else []}")
+        logger.info(f"Gán nhãn: {self.guid} - {peer_id} - {tag_list if tag_list else []}")
         return res
 
     def del_tag_by_peer_id(self, *peer_id):
         """
-        删除指定设备的标签记录。
+        Xóa bản ghi nhãn của thiết bị chỉ định.
 
-        :param peer_id: 一个或多个设备的 peer_id
-        :returns: 删除操作返回的 (rows_deleted, details)
+        :param peer_id: Một hoặc nhiều peer_id thiết bị
+        :returns: Kết quả xóa (rows_deleted, details)
         """
         res = self.user.user_tags.filter(peer_id__in=peer_id, guid=self.guid).delete()
-        logger.info(f"删除标签: {self.guid} - {peer_id}")
+        logger.info(f"Xóa nhãn: {self.guid} - {peer_id}")
         return res
 
     def get_tags_by_peer_id(self, peer_id) -> list[str]:
         """
-        获取单个设备的标签列表。
+        Lấy danh sách nhãn của một thiết bị.
 
-        :param peer_id: 设备 peer_id
-        :returns: 标签字符串列表，若无记录返回空列表
+        :param peer_id: peer_id thiết bị
+        :returns: Danh sách nhãn; không có thì trả về []
         """
         row = self.user.user_tags.filter(peer_id=peer_id, guid=self.guid).values("tags").first()
         if not row:
@@ -670,35 +701,35 @@ class TagService:
 
     def get_tags_map(self, peer_ids: list[str]) -> dict[str, list[str]]:
         """
-        批量获取多个设备的标签映射，避免 N+1 查询。
+        Lấy map nhãn cho nhiều thiết bị, tránh truy vấn N+1.
 
-        :param peer_ids: 设备 `peer_id` 列表
-        :returns: {peer_id: [tag, ...]} 映射
+        :param peer_ids: Danh sách `peer_id` thiết bị
+        :returns: Map {peer_id: [tag, ...]}
         """
         if not peer_ids:
             return {}
         rows = self.db_client_tags.objects.filter(guid=self.guid, peer_id__in=peer_ids).values("peer_id", "tags")
-        logger.debug(f"批量获取标签: {self.guid} peers: {peer_ids} result: {rows}")
+        logger.debug(f"Lấy nhãn theo batch: {self.guid} peers: {peer_ids} result: {rows}")
         result: dict[str, list[str]] = {}
         for row in rows:
             tags = eval(row.get("tags") or '[]')
             tags_qs = self.get_tags_by_id(*tags)
-            logger.debug(f"标签: {self.guid} peers: {row['peer_id']} tags: {tags} result: {tags_qs}")
+            logger.debug(f"Nhãn: {self.guid} peers: {row['peer_id']} tags: {tags} result: {tags_qs}")
             if not tags_qs:
                 continue
             result[row["peer_id"]] = [str(tag.tag) for tag in tags_qs]
-        logger.debug(f"批量获取标签结果: guid: {self.guid} peers: {peer_ids} result: {result}")
+        logger.debug(f"Kết quả lấy nhãn batch: guid: {self.guid} peers: {peer_ids} result: {result}")
         return result
 
     @staticmethod
     def _parse_tags(raw) -> list[str]:
         """
-        解析存储在数据库中的标签字段。
+        Phân tích trường nhãn lưu trong DB.
 
-        兼容 list 序列化为字符串的存储方式和 JSON 字符串。
+        Hỗ trợ chuỗi list đã serialize và chuỗi JSON.
 
-        :param raw: 原始存储值（字符串或列表）
-        :returns: 标签字符串列表
+        :param raw: Giá trị lưu gốc (chuỗi hoặc list)
+        :returns: Danh sách nhãn
         """
         if raw is None:
             return []
@@ -707,14 +738,14 @@ class TagService:
         s = str(raw).strip()
         if not s:
             return []
-        # 优先尝试 JSON
+        # Ưu tiên thử JSON
         try:
             val = json.loads(s)
             if isinstance(val, list):
                 return [str(x) for x in val]
         except Exception:
             pass
-        # 回退到安全的字面量解析
+        # Fallback sang literal_eval an toàn
         try:
             val = ast.literal_eval(s)
             if isinstance(val, list):
@@ -726,45 +757,45 @@ class TagService:
 
 class LogService(BaseService):
     """
-    日志服务类
+    Dịch vụ log
 
-    用于处理日志相关的业务逻辑
+    Xử lý logic liên quan đến log
     """
 
     db = Log
 
     def create_log(self, username, uuid, log_type, log_level="info", log_message=""):
         """
-        创建日志记录
+        Tạo bản ghi log
 
-        :param username: 用户名
-        :param uuid: 设备UUID
-        :param log_type: 日志类型
-        :param log_level: 日志级别
-        :param log_message: 日志消息
-        :return: 新创建的日志实例
+        :param username: Tên người dùng
+        :param uuid: UUID thiết bị
+        :param log_type: Loại log
+        :param log_level: Mức log
+        :param log_message: Nội dung log
+        :return: Bản ghi log mới
         """
         log = self.db.objects.create(
             user_id=self.get_user_info(username).id,
             uuid=uuid,
             log_level=log_level,
-            operation_type=log_type,  # 根据实际需求映射到合适的操作类型
-            operation_object="log",  # 根据实际需求设置操作对象
-            operation_result="success",  # 假设日志创建总是成功的
+            operation_type=log_type,  # Map theo nhu cầu thực tế
+            operation_object="log",  # Đối tượng thao tác theo nhu cầu
+            operation_result="success",  # Giả định tạo log luôn thành công
             operation_detail=log_message,
             operation_time=get_local_time(),
         )
         logger.info(
-            f'创建日志: 用户="{username}", UUID="{uuid}", 类型="{log_type}", 级别="{log_level}", 消息="{log_message}"'
+            f'Tạo log: user="{username}", UUID="{uuid}", loại="{log_type}", mức="{log_level}", nội dung="{log_message}"'
         )
         return log
 
 
 class AuditConnService(BaseService):
     """
-    审计连接服务类
+    Dịch vụ audit kết nối
 
-    用于处理审计连接相关的业务逻辑
+    Xử lý logic liên quan đến audit kết nối
     """
 
     db = AutidConnLog
@@ -784,7 +815,7 @@ class AuditConnService(BaseService):
             username=None
     ):
         """
-        记录日志
+        Ghi log
         :param username:
         :param type_:
         :param controller_peer_id:
@@ -832,15 +863,15 @@ class AuditConnService(BaseService):
                 type=type_,
             )
         logger.info(
-            f'审计连接: conn_id="{conn_id}", action="{action}", controlled_uuid="{controlled_uuid}", source_ip="{source_ip}", session_id="{session_id}"'
+            f'Audit kết nối: conn_id="{conn_id}", action="{action}", controlled_uuid="{controlled_uuid}", source_ip="{source_ip}", session_id="{session_id}"'
         )
 
 
 class AuditFileLogService(BaseService):
     """
-    审计文件服务类
+    Dịch vụ audit file
 
-    用于处理审计文件相关的业务逻辑
+    Xử lý logic liên quan đến audit file
     """
     db = AuditFileLog
 
@@ -882,7 +913,7 @@ class AuditFileLogService(BaseService):
             file_num=file_num,
         )
         logger.info(
-            f'审计文件: source_id="{source_id}", target_id="{target_id}", target_uuid="{target_uuid}", operation_type="{operation_type}", is_file="{is_file}", remote_path="{remote_path}", user_id="{user_id}", file_num="{file_num}"'
+            f'Audit file: source_id="{source_id}", target_id="{target_id}", target_uuid="{target_uuid}", operation_type="{operation_type}", is_file="{is_file}", remote_path="{remote_path}", user_id="{user_id}", file_num="{file_num}"'
         )
         return res
 
@@ -899,7 +930,7 @@ class PersonalService(BaseService):
         )
         personal.personal_user.create(user=create_user)
         logger.info(
-            f'创建地址簿: name: {personal_name}, create_user: {create_user}, type: {personal_type}, guid: {personal.guid}'
+            f'Tạo sổ địa chỉ: name: {personal_name}, create_user: {create_user}, type: {personal_type}, guid: {personal.guid}'
         )
         return personal
 
@@ -927,15 +958,15 @@ class PersonalService(BaseService):
     def delete_personal(self, guid):
         personal = self.get_personal(guid=guid)
         if personal and personal.personal_type != "private":
-            logger.info(f'删除地址簿: {personal.personal_name} - {personal.personal_name}')
+            logger.info(f'Xóa sổ địa chỉ: {personal.personal_name} - {personal.personal_name}')
             return personal.delete()
-        logger.info(f'无地址簿信息: {guid}')
+        logger.info(f'Không có thông tin sổ địa chỉ: {guid}')
         return None
 
     def add_personal_to_user(self, guid, username):
         user_qs = self.get_user_info(username)
         res = self.get_personal(guid=guid).personal_user.create(user_id=user_qs)
-        logger.info(f'分享地址簿给用户: {guid} - {username}')
+        logger.info(f'Chia sẻ sổ địa chỉ cho người dùng: {guid} - {username}')
         return res
 
     def del_personal_to_user(self, guid, username):
@@ -945,7 +976,7 @@ class PersonalService(BaseService):
             .personal_user.filter(user_id=user_qs)
             .delete()
         )
-        logger.info(f'取消分享地址簿: guid={guid}, username={username}')
+        logger.info(f'Hủy chia sẻ sổ địa chỉ: guid={guid}, username={username}')
         return res
 
     def add_peer_to_personal(self, guid, peer_id):
@@ -957,15 +988,15 @@ class PersonalService(BaseService):
             peer_id = [peer_id]
         peers = PeerInfoService().get_peers(*peer_id)
 
-        # 清掉alias
+        # Xóa alias
         alias_service = AliasService()
         alias_service.delete_alias(*peers, guid=guid)
 
-        # 清掉tag
+        # Xóa tag
         tag_service = TagService(guid=guid, user=user)
         tag_service.del_tag_by_peer_id(*peer_id)
         res = self.get_personal(guid=guid).personal_peer.filter(peer__in=peers).delete()
-        logger.info(f'从地址簿移除设备: guid={guid}, peer_ids={peer_id}')
+        logger.info(f'Gỡ thiết bị khỏi sổ địa chỉ: guid={guid}, peer_ids={peer_id}')
         return res
 
 
@@ -974,15 +1005,16 @@ class AliasService(BaseService):
 
     def set_alias(self, peer_id, alias, guid):
         """
-        设置或更新某地址簿下设备的别名。
+        Đặt hoặc cập nhật alias của thiết bị trong sổ địa chỉ.
 
-        :param str peer_id: 设备的 `peer_id`
-        :param str alias: 要设置的别名
-        :param str guid: 地址簿 GUID
+        :param str peer_id: `peer_id` của thiết bị
+        :param str alias: Alias cần đặt
+        :param str guid: GUID sổ địa chỉ
         :returns: None
         """
-        # 注意：模型字段 `peer_id` 与 `guid` 均为 ForeignKey；
-        # 若直接赋字符串会被认为是传入关联对象，需使用 `<field>_id` 列名进行原值写入
+        # Lưu ý: `peer_id` và `guid` là ForeignKey.
+        # Nếu gán trực tiếp chuỗi sẽ bị coi là đối tượng liên kết,
+        # cần dùng cột `<field>_id` để ghi giá trị gốc.
         kwargs = {
             "peer_id_id": peer_id,
             "guid_id": guid,
@@ -991,18 +1023,18 @@ class AliasService(BaseService):
         updated = self.db.objects.filter(peer_id_id=peer_id, guid_id=guid).update(**kwargs)
         if not updated:
             self.db.objects.create(**kwargs)
-        logger.info(f'设置别名: peer_id="{peer_id}", alias="{alias}", guid="{guid}"')
+        logger.info(f'Đặt alias: peer_id="{peer_id}", alias="{alias}", guid="{guid}"')
 
     def get_alias(self, guid):
         return self.db.objects.filter(guid=guid).all()
 
     def get_alias_map(self, guid: str, peer_ids: list[str]) -> dict[str, str]:
         """
-        批量获取某地址簿下多个设备的别名映射。
+        Lấy map alias cho nhiều thiết bị trong sổ địa chỉ.
 
-        :param guid: 地址簿 GUID
-        :param peer_ids: 设备 `peer_id` 列表
-        :returns: {peer_id: alias} 映射字典，未设置别名的设备不会出现在字典中
+        :param guid: GUID sổ địa chỉ
+        :param peer_ids: Danh sách `peer_id` thiết bị
+        :returns: Map {peer_id: alias}; thiết bị chưa có alias sẽ không xuất hiện
         """
         if not peer_ids:
             return {}
